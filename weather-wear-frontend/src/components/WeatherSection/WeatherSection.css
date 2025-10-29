@@ -1,0 +1,96 @@
+.weather-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 66%;
+    padding-left: 3rem;
+    color: #333;
+}
+
+/* Current Temp */
+.weather-current {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: bold;
+    color: #38bdf8;
+    font-size: 90px;
+}
+
+.weather-icon {
+    font-size: 70px;
+}
+
+.weather-temp {
+    font-size: 90px;
+}
+
+/* Sunrise & Sunset */
+.weather-times {
+    display: flex;
+    gap: 2rem;
+    margin-top: 0.5rem;
+    font-weight: 600;
+    color: #38bdf8;
+}
+
+/* Graph Placeholder */
+.weather-graph {
+    margin-top: 1.5rem;
+    width: 75%;
+    height: 130px;
+    background-color: #e0f2fe;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #38bdf8;
+    font-style: italic;
+}
+
+/* Weekly Forecast */
+.weather-week {
+    display: flex;
+    justify-content: space-between;
+    width: 75%;
+    margin-top: 2rem;
+    color: #444;
+}
+
+.weather-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 14px;
+}
+
+.weather-day .day-icon {
+    font-size: 24px;
+}
+
+.weather-day .day-range {
+    font-size: 12px;
+    color: #777;
+}
+
+/* Weather Details */
+.weather-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    width: 75%;
+    margin-top: 2rem;
+    font-weight: 600;
+    color: #333;
+    font-size: 18px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+}
+
+.border-right {
+    border-right: 2px solid #e0e0e0;
+    padding-right: 1rem;
+}

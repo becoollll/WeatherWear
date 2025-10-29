@@ -1,18 +1,56 @@
+import {Link} from 'react-router-dom';
+// import useLocation  from 'react-router-dom';
+import '../TopBar/TopBar.css';
+
+// ✅ Import images using ES modules instead of require()
+import logo from '../TopBar/raining.png';
+import userPlaceholder from '../TopBar/user.png';
+import search from '../TopBar/magnifying-glass.png';
+
 export default function TopBar() {
+    // const location = useLocation();
+    // const onProfilePage = location.pathname.startsWith('/profile');
+
     return (
-        <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-2 w-1/2">
-                <input
-                    type="text"
-                    placeholder="Enter Location"
-                    className="w-full px-4 py-2 rounded-full border border-gray-300 focus:outline-none"
-                />
-                <span role="img" aria-label="map">📍</span>
-                <span className="text-[#38BDF8] text-sm font-semibold">Alexandria, VA, USA</span>
-            </div>
-            <div className="text-gray-500 text-sm font-semibold cursor-pointer">
-                🔐 Login | Register
-            </div>
-        </div>
+        <header className="topbar-container">
+            <section className="topbar-logo">
+                <Link to="/">
+                    <img
+                        src={logo}
+                        alt="WeatherWear Logo"
+                        width="60"
+                        className="logo-img"
+                    />
+                </Link>
+                <Link to="/" className="brand-name">WeatherWear</Link>
+            </section>
+            <nav className="topbar-nav">
+                <form className="location-form">
+                    <input
+                        type="text"
+                        placeholder="Enter Location"
+                        className="location-input"
+                    />
+                    <button type="submit" className="location-button">
+                        <img
+                            src={search}
+                            alt="Search"
+                            className="search-icon"
+                        />
+                    </button>
+                </form>
+            </nav>
+
+            <section className="topbar-login">
+                <Link to="/login" className="login-link">Login/Sign-up</Link>
+                    <a href="#" className="profile-section">
+                        <img
+                            src={userPlaceholder}
+                            alt="User Profile"
+                            className="profile-img"
+                        />
+                    </a>
+            </section>
+        </header>
     );
 }
