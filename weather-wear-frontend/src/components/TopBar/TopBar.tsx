@@ -42,7 +42,7 @@ export default function TopBar() {
             </nav>
 
             <section className="topbar-login">
-                <Link to="/login" className="login-link">Login/Sign-up</Link>
+                <Link to="/login" className="login-link">Login|Register</Link>
                     <a href="#" className="profile-section">
                         <img
                             src={userPlaceholder}
