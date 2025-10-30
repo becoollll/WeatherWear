@@ -1,6 +1,7 @@
 import TopBar from '../components/TopBar/TopBar.tsx';
 import WeatherSection from '../components/WeatherSection/WeatherSection.tsx';
 import Sidebar from '../components/NavBar/NavBar.tsx';
+import OutfitSection from '../components/OutfitSection/OutfitSection.tsx';
 import '../pages/HomePage.css';
 
 export default function HomePage() {
@@ -9,10 +10,11 @@ export default function HomePage() {
             <Sidebar />
             <div className="main-content">
                 <TopBar />
-                    <div className="flex justify-between items-start w-full h-full">
-                        <WeatherSection />
-                        {/*<OutfitSection /> */}
-                    </div>
+                <div className="main-sections">
+                    <WeatherSection />
+                    <OutfitSection />
+                </div>
+
                 {/*    <WeatherSection />*/}
                 {/*</div>*/}
             </div>

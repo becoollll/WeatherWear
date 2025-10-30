@@ -22,3 +22,24 @@
     overflow: auto;
     padding: 2rem;
 }
+
+.main-sections {
+    display: flex;
+    justify-content: space-between; /* adds space between them */
+    align-items: flex-start; /* align them to the top */
+    gap: 2rem; /* adds spacing between columns */
+    width: 100%;
+    height: 100%;
+    padding: 1rem 2rem;
+}
+
+/* Optional: give each section a flex ratio */
+.weather-ui-container {
+    flex: 1; /* takes up half the width */
+    max-width: 50%;
+}
+
+.outfit-section {
+    flex: 1;
+    max-width: 50%;
+}

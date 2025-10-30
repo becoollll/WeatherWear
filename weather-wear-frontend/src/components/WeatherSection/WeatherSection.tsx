@@ -28,14 +28,14 @@ export default function WeatherSection() {
     ];
 
     const weeklyForecast = [
-        { day: 'Thu', icon: partlyCloudyIcon, high: 65, low: 43 },
-        { day: 'Fri', icon: partlyCloudyIcon, high: 60, low: 42 },
-        { day: 'Sat', icon: sunnyIcon, high: 61, low: 42 },
-        { day: 'Sun', icon: sunnyIcon, high: 61, low: 44 },
-        { day: 'Mon', icon: cloudyIcon, high: 58, low: 46 },
-        { day: 'Tue', icon: rainyIcon, high: 56, low: 46 },
-        { day: 'Wed', icon: rainyIcon, high: 57, low: 47 },
-        { day: 'Thu', icon: partlyCloudyIcon, high: 58, low: 46 },
+        { id: 1, day: 'Thu', icon: partlyCloudyIcon, high: 65, low: 43 },
+        { id: 2, day: 'Fri', icon: partlyCloudyIcon, high: 60, low: 42 },
+        { id: 3, day: 'Sat', icon: sunnyIcon, high: 61, low: 42 },
+        { id: 4, day: 'Sun', icon: sunnyIcon, high: 61, low: 44 },
+        { id: 5, day: 'Mon', icon: cloudyIcon, high: 58, low: 46 },
+        { id: 6, day: 'Tue', icon: rainyIcon, high: 56, low: 46 },
+        { id: 7, day: 'Wed', icon: rainyIcon, high: 57, low: 47 },
+        { id: 8, day: 'Thu', icon: partlyCloudyIcon, high: 58, low: 46 },
     ];
 
     return (
