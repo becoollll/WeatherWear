@@ -17,13 +17,17 @@
 
 .logo-img {
     border-radius: 8px;
+    /*margin-left: 0rem;*/
+    /*margin-right: 1rem;*/
 }
 
 .brand-name {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 700;
    color: #F8F6E3;
     text-decoration: none;
+    /*margin-right: 1rem;*/
+    margin-left: 0.1rem;
 }
 
 .brand-name:hover {
@@ -42,13 +46,15 @@
 .location-form {
     display: flex;
     align-items: center;
-    background-color: #f4f4f4;
+    background-color: #F8F6E3;
     border-radius: 40px;
     overflow: hidden;
     width: 60%;
     max-width: 500px;
     text-decoration: none;
     color: black;
+    /*margin-left: 0.1rem;*/
+    margin-right: 1rem;
 }
 .search-icon {
     margin-right: 0.1rem;
@@ -67,8 +73,21 @@
     flex: 1;
     height: 28px;
     background-color: #F8F6E3;
-}
 
+}
+.current-location {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    background-color: #F8F6E3;
+    padding: 0.3em 0.8em;
+    border-radius: 20px;
+    border: 2px solid black;
+    font-weight: 500;
+    color: black;
+    margin-right: 1rem;
+    margin-left: 2rem;
+}
 .location-button {
     background-color: #F8F6E3;
     border-radius: 0 50px 50px 0;
