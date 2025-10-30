@@ -9,9 +9,13 @@ export default function HomePage() {
             <Sidebar />
             <div className="main-content">
                 <TopBar />
-                <div className="content-body">
-                    <WeatherSection />
-                </div>
+                {/*<div className="content-body">*/}
+                    <div className="flex justify-between items-start w-full h-full">
+                        <WeatherSection />
+                        {/*<OutfitSection /> /!* this will take the remaining 40% *!/*/}
+                    </div>
+                {/*    <WeatherSection />*/}
+                {/*</div>*/}
             </div>
         </div>
     );
