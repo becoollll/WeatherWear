@@ -2,7 +2,6 @@
     width: 50px;
     height: 100vh;
     background-color: #6AD4DD;
-    /*border-right: 1px solid black;*/
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -12,8 +11,6 @@
     color: #F8F6E3;
 }
 
-
-/* Hamburger icon */
 .hamburger {
     font-size: 2rem;
     cursor: pointer;
@@ -26,7 +23,6 @@
     transform: scale(1.1);
 }
 
-/* Dropdown menu */
 .sidebar-dropdown {
     position: absolute;
     top: 60px;
@@ -67,10 +63,10 @@
     border-radius: 6px;
 }
 .homepage-container {
-    display: flex;              /* horizontal layout */
+    display: flex;
     flex-direction: row;
-    height: 100vh;              /* full screen height */
-    width: 100vw;               /* full screen width */
+    height: 100vh;
+    width: 100vw;
     background-color: #F8F6E3;
     overflow: hidden;
 }

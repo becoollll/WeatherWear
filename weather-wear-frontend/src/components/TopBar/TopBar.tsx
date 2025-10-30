@@ -1,8 +1,6 @@
 import {Link} from 'react-router-dom';
-// import useLocation  from 'react-router-dom';
 import '../TopBar/TopBar.css';
 
-// ✅ Import images using ES modules instead of require()
 import logo from '../TopBar/raining.png';
 import userPlaceholder from '../TopBar/user.png';
 import search from '../TopBar/magnifying-glass.png';
