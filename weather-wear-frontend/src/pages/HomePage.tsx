@@ -1,11 +1,23 @@
-// src/pages/HomePage/HomePage.tsx
-import React from 'react';
-import './HomePage.css';
+import TopBar from '../components/TopBar/TopBar.tsx';
+import WeatherSection from '../components/WeatherSection/WeatherSection.tsx';
+import Sidebar from '../components/NavBar/NavBar.tsx';
+import OutfitSection from '../components/OutfitSection/OutfitSection.tsx';
+import '../pages/HomePage.css';
 
-const HomePage: React.FC = () => {
-  return (
-    <div>empty homepage</div>
-  );
-};
+export default function HomePage() {
+    return (
+        <div className="homepage-container">
+            <Sidebar />
+            <div className="main-content">
+                <TopBar />
+                <div className="main-sections">
+                    <WeatherSection />
+                    <OutfitSection />
+                </div>
 
-export default HomePage;
+                {/*    <WeatherSection />*/}
+                {/*</div>*/}
+            </div>
+        </div>
+    );
+}

@@ -1,0 +1,123 @@
+.outfit-section {
+    flex: 1;
+    background-color: #FAF7E9;
+    border-radius: 12px;
+    padding: 1.5em;
+    /*box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);*/
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    margin-left: 1em;
+    width: 50%;
+    color: #1E293B;
+    font-family: 'Merriweather Sans', Helvetica, sans-serif;
+}
+
+.outfit-title {
+    /*font-size: 1.5rem;*/
+    /*font-weight: 700;*/
+    /*color: #333;*/
+    text-align: center;
+    margin-bottom: 0.5em;
+    font-size: 2rem;
+    color: #6AD4DD;
+    font-weight: 700;
+}
+
+.outfit-main {
+    display: flex;
+    gap: 1em;
+    align-items: center;
+    border-bottom: 1px solid #e2e2e2;
+    padding-bottom: 1em;
+}
+
+.outfit-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 10px;
+    object-fit: cover;
+    /*border: 2px solid #ccc;*/
+}
+
+.outfit-info h3 {
+    margin: 0;
+    color: #1E293B;
+}
+
+.outfit-info p {
+    color: #1E293B;
+    font-size: 0.9rem;
+    margin: 0.2em 0;
+}
+
+.outfit-info ul {
+    list-style: none;
+    margin: 0.5em 0 0;
+    padding: 0;
+}
+
+.outfit-info li {
+    font-size: 0.95rem;
+    margin-bottom: 0.3em;
+}
+
+.outfit-details {
+    margin-top: 1em;
+}
+
+.outfit-details h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.4em;
+    color: #1E293B;
+}
+
+.outfit-details ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1em;
+}
+
+.outfit-details li {
+    font-size: 0.95rem;
+    margin-bottom: 0.3em;
+}
+
+.color-palette {
+    display: flex;
+    gap: 0.5em;
+}
+
+.color-swatch {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 2px solid #999;
+}
+
+.refresh-button {
+    margin-top: 1rem;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+p {
+    margin-top: 0.1rem;
+    color: #1E293B;
+    font-family: 'Merriweather Sans', Helvetica, sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+}
+
+.refresh-button:hover {
+    transform: rotate(360deg);
+}
+
+.refresh-icon {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
