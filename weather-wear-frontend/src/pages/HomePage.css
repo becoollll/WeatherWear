@@ -5,6 +5,8 @@
     width: 100vw;
     background-color: #FAF7E9;
     overflow: hidden;
+    flex-wrap: nowrap;
+    overflow-y: scroll
 }
 
 .main-content {
