@@ -12,6 +12,7 @@ interface Coordinates {
 }
 interface WeatherData {
   current: {
+    coord: any;
     main: { temp: number; temp_max: number; temp_min: number; feels_like: number; humidity: number };
     weather: { main: string; description: string; icon: string; }[];
     sys: { sunrise: number; sunset: number; };
@@ -41,52 +42,96 @@ export default function HomePage() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [units, setUnits] = useState<'metric' | 'imperial'>('imperial');
-
+    const [initialCoords, setInitialCoords] = useState<Coordinates | null>(null);
+    
     useEffect(() => {
-        const fetchData = async (coords: Coordinates, currentUnits: 'metric' | 'imperial') => {
-            setIsLoading(true);
-            try {
-                const locationBody = { latitude: coords.latitude, longitude: coords.longitude };
-                const weatherBody = { ...locationBody, units: currentUnits };
-
-                // call the two functions in parallel
-                const [locationRes, weatherRes] = await Promise.all([
-                    supabase.functions.invoke('get-location-from-coords', { body: locationBody }),
-                    supabase.functions.invoke('get-weather-by-coords', { body: weatherBody })
-                ]);
-
-                if (locationRes.error) throw new Error('Could not fetch location name.');
-                // check weatherRes for error or invalid data
-                if (weatherRes.error || !weatherRes.data) throw new Error('Could not fetch weather data.');
-
-                setLocationName(locationRes.data.location);
-                setWeatherData(weatherRes.data); // set all weather data
-
-            } catch (e: any) {
-                setError(e.message);
-                console.error("Data fetching error:", e);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         if (!navigator.geolocation) {
             setError('Geolocation is not supported.');
             setIsLoading(false);
             return;
         }
 
-        // Request user's location from browser
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                fetchData(position.coords, units);
+                const coords = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                };
+                // Save initial coordinates for fallback
+                setInitialCoords(coords);
+                fetchData(coords, units);
             },
             () => {
                 setError('Location access denied.');
                 setIsLoading(false);
             }
         );
-    }, [units]);
+    }, []);
+
+    const fetchData = async (coords: Coordinates, currentUnits: 'metric' | 'imperial') => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const locationBody = { latitude: coords.latitude, longitude: coords.longitude };
+            const weatherBody = { ...locationBody, units: currentUnits };
+
+            const [locationRes, weatherRes] = await Promise.all([
+                supabase.functions.invoke('get-location-from-coords', { body: locationBody }),
+                supabase.functions.invoke('get-weather-by-coords', { body: weatherBody })
+            ]);
+
+            if (locationRes.error) throw new Error('Could not fetch location name.');
+            if (weatherRes.error || !weatherRes.data) throw new Error('Could not fetch weather data.');
+
+            setLocationName(locationRes.data.location);
+            setWeatherData(weatherRes.data);
+
+        } catch (e: any) {
+            setError(e.message);
+            console.error("Data fetching error:", e);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSearch = async (searchLocation: string) => {
+        if (!searchLocation.trim()) return; // empty, do nothing
+
+        setIsLoading(true);
+        try {
+            // call the function to get coordinates from location name
+            const { data: coordsData, error: coordsError } = await supabase.functions.invoke('get-coords-from-location', {
+                body: { locationName: searchLocation }
+            });
+
+            if (coordsError || !coordsData) {
+                throw new Error(`Invalid location: "${searchLocation}"`);
+            }
+
+            await fetchData(coordsData, units);
+
+        } catch (e: any) {
+            alert(e.message);
+            if (initialCoords) {
+                await fetchData(initialCoords, units);
+            } else {
+                setError("Could not revert to initial location.");
+                setIsLoading(false);
+            }
+        }
+    };
+
+    const handleUnitChange = (newUnit: 'metric' | 'imperial') => {
+        setUnits(newUnit);
+        if (weatherData) {
+            // use current weatherData coordinates to fetch new data
+            const currentCoords = {
+                latitude: weatherData.current.coord.lat,
+                longitude: weatherData.current.coord.lon
+            };
+            fetchData(currentCoords, newUnit);
+        }
+    };
 
     return (
         <div className="homepage-container">
@@ -97,7 +142,8 @@ export default function HomePage() {
                     error={error} 
                     isLoading={isLoading}
                     currentUnit={units}
-                    onUnitChange={setUnits}
+                    onUnitChange={handleUnitChange}
+                    onSearch={handleSearch}
                 />
                 <div className="main-sections">
                     <WeatherSection 
