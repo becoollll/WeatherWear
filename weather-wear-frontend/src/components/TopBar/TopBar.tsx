@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../TopBar/TopBar.css';
 
@@ -12,12 +13,22 @@ interface TopBarProps {
   isLoading: boolean;
   currentUnit: 'metric' | 'imperial';
   onUnitChange: (unit: 'metric' | 'imperial') => void;
+  onSearch: (location: string) => void;
 }
 
-export default function TopBar({ locationName, error, isLoading, currentUnit, onUnitChange }: TopBarProps) {
+export default function TopBar({ locationName, error, isLoading, currentUnit, onUnitChange, onSearch }: TopBarProps) {
+    // State for the search input
+    const [inputValue, setInputValue] = useState('');
     const handleToggle = () => {
         const newUnit = currentUnit === 'metric' ? 'imperial' : 'metric';
         onUnitChange(newUnit);
+    };
+
+    // Handle form submission
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault(); // Prevent page reload
+        onSearch(inputValue);
+        setInputValue(''); // Clear input after search
     };
 
     return (
@@ -30,8 +41,14 @@ export default function TopBar({ locationName, error, isLoading, currentUnit, on
             </section>
 
             <nav className="topbar-nav">
-                <form className="location-form">
-                    <input type="text" placeholder="Enter Location" className="location-input" />
+                <form className="location-form" onSubmit={handleSubmit}>
+                    <input 
+                        type="text" 
+                        placeholder="e.g., Alexandria, VA or 22305" 
+                        className="location-input"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                    />
                     <button type="submit" className="location-button">
                         <img src={search} alt="Search" className="search-icon" />
                     </button>
@@ -45,9 +62,9 @@ export default function TopBar({ locationName, error, isLoading, currentUnit, on
                 </div>
             </nav>
             <div className="unit-toggle" onClick={handleToggle}>
-                <span className={currentUnit === 'metric' ? 'active' : ''}>°C</span>
-                <span className="toggle-divider">/</span>
                 <span className={currentUnit === 'imperial' ? 'active' : ''}>°F</span>
+                <span className="toggle-divider">/</span>
+                <span className={currentUnit === 'metric' ? 'active' : ''}>°C</span>
             </div>
             <section className="topbar-login">
                 <Link to="/login" className="login-link">Login | Register</Link>
