@@ -7,58 +7,139 @@ import {
     ResponsiveContainer
 } from 'recharts';
 
-import sunnyIcon from '../WeatherSection/Vector-2.png';
-import partlyCloudyIcon from '../WeatherSection/Vector.png';
-import rainyIcon from '../WeatherSection/Vector-4.png';
-import cloudyIcon from '../WeatherSection/Vector-3.png';
-import sunny from '../WeatherSection/Sun-Icon.png';
 import sunRise from '../WeatherSection/Frame.png';
 import sunSet from '../WeatherSection/Frame-2.png';
 
-export default function WeatherSection() {
-    const temperatureData = [
-        { time: '8am', temp: 43 },
-        { time: '11am', temp: 49 },
-        { time: '2pm', temp: 55 },
-        { time: '5pm', temp: 59 },
-        { time: '8pm', temp: 52 },
-        { time: '11pm', temp: 45 },
-        { time: '2am', temp: 41 },
-        { time: '4am', temp: 41 },
-    ];
+interface WeatherData {
+  current: {
+    main: { temp: number; temp_max: number; temp_min: number; feels_like: number; humidity: number };
+    weather: { main: string; description: string; icon: string; }[];
+    sys: { sunrise: number; sunset: number; };
+    wind: { speed: number; };
+    visibility: number;
+  };
+  hourly: {
+    dt: number;
+    main: { temp: number; };
+    weather: { icon: string; }[];
+    pop: number;
+  }[];
+  daily: {
+    dt: number;
+    temp: { min: number; max: number; };
+    weather: { icon: string; }[];
+  }[];
+  city: {
+    timezone: number;
+  };
+  uvi: number;
+}
 
-    const weeklyForecast = [
-        { id: 1, day: 'Thu', icon: partlyCloudyIcon, high: 65, low: 43 },
-        { id: 2, day: 'Fri', icon: partlyCloudyIcon, high: 60, low: 42 },
-        { id: 3, day: 'Sat', icon: sunnyIcon, high: 61, low: 42 },
-        { id: 4, day: 'Sun', icon: sunnyIcon, high: 61, low: 44 },
-        { id: 5, day: 'Mon', icon: cloudyIcon, high: 58, low: 46 },
-        { id: 6, day: 'Tue', icon: rainyIcon, high: 56, low: 46 },
-        { id: 7, day: 'Wed', icon: rainyIcon, high: 57, low: 47 },
-        { id: 8, day: 'Thu', icon: partlyCloudyIcon, high: 58, low: 46 },
-    ];
+interface WeatherSectionProps {
+  weatherData: WeatherData | null;
+  isLoading: boolean;
+  units: 'imperial' | 'metric';
+}
+
+// Helper function to format UNIX timestamp to HH:MM
+const formatTime = (timestamp: number, timezoneOffset: number) => {
+    const localTimestamp = timestamp + timezoneOffset;
+    const date = new Date(localTimestamp * 1000);
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+};
+
+// Helper function to get UVI description
+const getUviDescription = (uvi: number): string => {
+    const roundedUvi = Math.round(uvi);
+    if (roundedUvi <= 2) return 'Low';
+    if (roundedUvi <= 5) return 'Moderate';
+    if (roundedUvi <= 7) return 'High';
+    if (roundedUvi <= 10) return 'Very High';
+    return 'Extreme';
+};
+
+// Custom Tooltip component for the chart
+const CustomTooltip = ({ active, payload, label, unitSymbol }: any) => {
+    if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        const iconUrl = `https://openweathermap.org/img/wn/${data.icon}.png`;
+
+        return (
+            <div className="custom-tooltip">
+                <p className="tooltip-time">{label}</p>
+                <div className="tooltip-details">
+                    <img src={iconUrl} alt="weather icon" className="tooltip-icon" />
+                    <p className="tooltip-label">{`${data.temp}°${unitSymbol}`}</p>
+                </div>
+            </div>
+        );
+    }
+    return null;
+};
+export default function WeatherSection({ weatherData, isLoading, units }: WeatherSectionProps) {
+    const unitSymbol = units === 'metric' ? 'C' : 'F';
+
+    if (isLoading) {
+        return <div className="weather-ui-container">Loading Weather...</div>;
+    }
+
+    if (!weatherData) {
+        return <div className="weather-ui-container">Could not load weather data.</div>;
+    }
+
+    // Destructure necessary data
+    const { current, hourly, daily, city, uvi } = weatherData;
+    const { main, sys, weather } = current;
+    const iconUrl = `https://openweathermap.org/img/wn/${weather[0].icon}@2x.png`;
+
+    const temperatureData = hourly.map((hour, index) => {
+        // The first label is "Now"
+        const timeLabel = index === 0 
+            ? 'Now' 
+            : new Date(hour.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }).toLowerCase();
+        
+        return {
+            time: timeLabel,
+            temp: Math.round(hour.main.temp),
+            icon: hour.weather[0].icon, // Include icon code for tooltip
+        };
+    });
+
+    const weeklyForecast = daily.slice(0, 7).map(day => { // Use slice to get next 7 days
+        return {
+            day: new Date(day.dt * 1000).toLocaleDateString('en-US', { weekday: 'short' }),
+            icon: `https://openweathermap.org/img/wn/${day.weather[0].icon}.png`,
+            high: `${Math.round(day.temp.max)}°`,
+            low: `${Math.round(day.temp.min)}°`,
+        };
+    });
 
     return (
         <div className="weather-ui-container">
-            {/* Top section */}
+            {/* Top section with REAL data */}
             <div className="weather-main">
                 <div className="weather-temp-icon">
-                    <img
-                        src={sunny}
-                        alt="Current weather"
-                        className="weather-main-icon"
-                    />
-                    <span className="weather-temp">52°F</span>
+                    <div className="weather-icon-wrapper">
+                        <img
+                            src={iconUrl}
+                            alt={weather[0].description}
+                            className="weather-main-icon"
+                        />
+                        <p className="weather-description">{weather[0].description}</p>
+                    </div>
+                    <span className="weather-temp">{Math.round(main.temp)}°{unitSymbol}</span>
                 </div>
 
                 <div className="weather-times">
                     <div className="time-item">
                         <img src={sunRise} alt="Sunrise" className="time-icon" />
-                        <span>07:18</span>
+                        <span>{formatTime(sys.sunrise, city.timezone)}</span>
                     </div>
                     <div className="time-item">
                         <img src={sunSet} alt="Sunset" className="time-icon" />
-                        <span>18:00</span>
+                        <span>{formatTime(sys.sunset, city.timezone)}</span>
                     </div>
                 </div>
             </div>
@@ -76,15 +157,15 @@ export default function WeatherSection() {
                             dataKey="time"
                             stroke="#707070"
                             fontSize={12}
-                            interval={0}
+                            interval="preserveStartEnd"
                             padding={{ left: 0, right: 0 }}
                             tickMargin={8}
                         />
-                        <Tooltip />
+                        <Tooltip content={<CustomTooltip unitSymbol={unitSymbol} />} />
                         <Area
                             type="monotone"
                             dataKey="temp"
-                            stroke="#38bdf8"
+                            stroke="#6AD4DD"
                             fill="url(#tempGradient)"
                             strokeWidth={3}
                             dot={true}
@@ -98,25 +179,38 @@ export default function WeatherSection() {
                     <div key={day.day} className="weather-week-item">
                         <span className="week-day">{day.day}</span>
                         <img src={day.icon} alt={`${day.day} weather`} className="week-icon-img" />
-                        <span className="week-temp">{day.high}°</span>
-                        <span className="week-low">{day.low}°</span>
+                        <span className="week-temp">{day.high}{unitSymbol}</span>
+                        <span className="week-low">{day.low}{unitSymbol}</span>
                     </div>
                 ))}
             </div>
 
-            <div className="weather-details-grid">
-                <div className="details-left">
-                    <div>Feels Like</div>
-                    <div>Humidity</div>
-                    <div>UV Index</div>
-                    <div>Precipitation</div>
+            {/* Additional Weather Details */}
+            <div className="weather-details-table">
+                <div className="detail-row">
+                    <span className="detail-label">Feels Like</span>
+                    <span className="detail-value">{Math.round(main.feels_like)}°{unitSymbol}</span>
                 </div>
-                <div className="divider" />
-                <div className="details-right">
-                    <div>47°F</div>
-                    <div>61%</div>
-                    <div>0</div>
-                    <div>0</div>
+                <div className="detail-row">
+                    <span className="detail-label">Humidity</span>
+                    <span className="detail-value">{main.humidity}%</span>
+                </div>
+                <div className="detail-row">
+                    <span className="detail-label">Precipitation</span>
+                    <span className="detail-value">{hourly[0]?.pop ? Math.round(hourly[0].pop * 100) : 0}%</span>
+                </div>
+                <div className="detail-row">
+                    <span className="detail-label">UV Index</span>
+                    <span className="detail-value">
+                        {uvi != null ? (
+                            <>
+                                {Math.round(uvi)}
+                                <span className="uvi-description"> / {getUviDescription(uvi)}</span>
+                            </>
+                        ) : (
+                            'N/A'
+                        )}
+                    </span>
                 </div>
             </div>
         </div>
