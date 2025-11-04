@@ -41,13 +41,18 @@ interface WeatherSectionProps {
   units: 'imperial' | 'metric';
 }
 
-// Helper function to format UNIX timestamp to HH:MM
 const formatTime = (timestamp: number, timezoneOffset: number) => {
     const localTimestamp = timestamp + timezoneOffset;
     const date = new Date(localTimestamp * 1000);
-    const hours = date.getUTCHours().toString().padStart(2, '0');
+
+    let hours = date.getUTCHours();
     const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 becomes 12
+
+    return `${hours}:${minutes} ${ampm}`;
 };
 
 // Helper function to get UVI description
