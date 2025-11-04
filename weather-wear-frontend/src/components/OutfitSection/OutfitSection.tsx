@@ -1,60 +1,222 @@
-import '../OutfitSection/OutfitSection.css';
-import topPlaceholder from '../OutfitSection/Vector-6.png';
-import bottomPlaceholder from '../OutfitSection/Frame-4.png';
-import accessoryPlaceholder from '../OutfitSection/Frame-3.png';
-import refreshIcon from '../OutfitSection/Refresh.png'; // ← your refresh image
+import { useEffect, useState } from "react";
+import { supabase } from "../../supabaseClient";
+import "../OutfitSection/OutfitSection.css";
+import topPlaceholder from "../OutfitSection/Vector-6.png";
+import bottomPlaceholder from "../OutfitSection/Frame-4.png";
+import accessoryPlaceholder from "../OutfitSection/Frame-3.png";
+import refreshIcon from "../OutfitSection/Refresh.png";
+import type { WeatherData } from "../../pages/HomePage";
 
-export default function OutfitSection() {
+interface OutfitSectionProps {
+    weatherData: WeatherData | null;
+    isLoading: boolean;
+}
+
+interface ClothingItem {
+    id: number;
+    clothing_type: string;
+    clothing_category?: string;
+    high: number;
+    low: number;
+    weather_con: string;
+}
+
+/**
+ * Normalize weather condition to consistent categories
+ */
+function normalizeWeatherCondition(cond: string): string {
+    const c = cond.toLowerCase();
+    if (["rain", "rainy", "drizzle", "thunderstorm"].some(k => c.includes(k))) return "rain";
+    if (["snow", "snowy"].some(k => c.includes(k))) return "snow";
+    if (["cloud", "clouds"].some(k => c.includes(k))) return "clouds";
+    if (["clear", "sun"].some(k => c.includes(k))) return "clear";
+    return "all";
+}
+
+export default function OutfitSection({ weatherData, isLoading }: OutfitSectionProps) {
+    const [outfit, setOutfit] = useState<{
+        top: ClothingItem | null;
+        bottom: ClothingItem | null;
+        accessory: ClothingItem | null;
+    }>({
+        top: null,
+        bottom: null,
+        accessory: null,
+    });
+
+    useEffect(() => {
+        if (weatherData && !isLoading) {
+            void fetchOutfit();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [weatherData, isLoading]);
+
+    async function fetchOutfit() {
+        if (!weatherData) return;
+
+        const temp = Math.round(weatherData.current.main.feels_like);
+        const condition = normalizeWeatherCondition(weatherData.current.weather[0].main);
+
+        console.log("🌤️ Normalized weather:", condition, "Temp:", temp);
+
+        // 🔍 先測試：取得所有資料
+        const { data: allData, error: allError } = await supabase
+            .from("general-wardrobe")
+            .select("*");
+
+        console.log(" ALL DATA:", allData);
+        console.log(" ALL ERROR:", allError);
+
+        if (allError) {
+            console.error(" Supabase error:", allError);
+            return;
+        }
+
+        // 🔍 測試原本的查詢
+        const { data: filteredData, error: filteredError } = await supabase
+            .from("general-wardrobe")
+            .select("*")
+            .lte("low", temp)
+            .gte("high", temp);
+
+        console.log("🔍 FILTERED DATA:", filteredData);
+        console.log("🔍 Query was: low <= " + temp + " AND high >= " + temp);
+
+        if (filteredError) {
+            console.error(" Filter error:", filteredError);
+        }
+
+        // 決定使用哪組資料：優先使用過濾後的，沒有則用全部
+        const dataToUse = (filteredData && filteredData.length > 0) ? filteredData : allData;
+
+        if (!dataToUse || dataToUse.length === 0) {
+            console.warn("⚠ No clothing data found in database.");
+            setOutfit({ top: null, bottom: null, accessory: null });
+            return;
+        }
+
+        console.log(filteredData && filteredData.length > 0
+            ? "✅ Using filtered data"
+            : "⚠️ Using ALL data as fallback");
+
+        // 根據天氣條件過濾
+        const weatherFiltered = dataToUse.filter(
+            (item: ClothingItem) =>
+                item.weather_con === "all" ||
+                condition.includes(item.weather_con.toLowerCase()) ||
+                item.weather_con.toLowerCase().includes(condition)
+        );
+
+        if (weatherFiltered.length === 0) {
+            console.warn("⚠️ No matching clothing items for condition:", condition);
+            setOutfit({ top: null, bottom: null, accessory: null });
+            return;
+        }
+
+        // 按類型分類
+        const topTypes = ["sweatshirt", "t-shirt", "polo", "tanktop", "buttonup", "hoodie"];
+        const bottomTypes = ["jeans", "sweatpants", "shorts"];
+        const accessoryTypes = ["rainjacket", "jacket", "wintercoat", "overalls", "jumpsuit"];
+
+        const tops = weatherFiltered.filter((i) => topTypes.includes(i.clothing_type));
+        const bottoms = weatherFiltered.filter((i) => bottomTypes.includes(i.clothing_type));
+        const accessories = weatherFiltered.filter((i) => accessoryTypes.includes(i.clothing_type));
+
+        console.log(" Categorized:", {
+            tops: tops.length,
+            bottoms: bottoms.length,
+            accessories: accessories.length
+        });
+
+        // 隨機選擇
+        const randomPick = (arr: ClothingItem[]) =>
+            arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null;
+
+        setOutfit({
+            top: randomPick(tops),
+            bottom: randomPick(bottoms),
+            accessory: randomPick(accessories),
+        });
+    }
+
+    const handleRefresh = () => {
+        void fetchOutfit();
+    };
+
+    if (isLoading) {
+        return <p style={{ textAlign: "center" }}>Loading outfit recommendation...</p>;
+    }
+
     return (
         <div className="outfit-section">
             <h2 className="outfit-title">Today's Outfit Recommendation</h2>
 
             <div className="outfit-grid">
+                {/* Top */}
                 <div className="outfit-item">
+
+                    <div className="outfit-info">
+                        <h3>Top</h3>
+                        {outfit.top ? (
+                            <>
+                                <p>{outfit.top.clothing_type}</p>
+
+                            </>
+                        ) : (
+                            <p>No match</p>
+                        )}
+                    </div>
                     <img
                         src={topPlaceholder}
                         alt="Top recommendation"
                         className="outfit-image"
                     />
-                    <div className="outfit-info">
-                        <h3>Top</h3>
-                        {/*<p>🧥 Light Jacket / 👕 Long Sleeve Shirt</p>*/}
-                    </div>
                 </div>
 
+                {/* Bottom */}
                 <div className="outfit-item">
+                    <div className="outfit-info">
+                        <h3>Bottom</h3>
+                        {outfit.bottom ? (
+                            <>
+                                <p>{outfit.bottom.clothing_type}</p>
+
+                            </>
+                        ) : (
+                            <p>No match</p>
+                        )}
+                    </div>
                     <img
                         src={bottomPlaceholder}
                         alt="Bottom recommendation"
                         className="outfit-image"
                     />
-                    <div className="outfit-info">
-                        <h3>Bottom</h3>
-                        {/*<p>👖 Jeans / 🩳 Shorts</p>*/}
-                    </div>
                 </div>
 
+                {/* Accessories */}
                 <div className="outfit-item">
-                    <img
-                        src={accessoryPlaceholder}
-                        alt="Accessories recommendation"
-                        className="outfit-image"
-                    />
                     <div className="outfit-info">
                         <h3>Accessories</h3>
-                        {/*<p>🕶️ Sunglasses / 🎒 Backpack / 🧢 Cap</p>*/}
+                        {outfit.accessory ? (
+                            <>
+                                <p>{outfit.accessory.clothing_type}</p>
+                            </>
+                        ) : (
+                            <p>No match</p>
+                        )}
                     </div>
+                    <img
+                        src={accessoryPlaceholder}
+                        alt="Accessory recommendation"
+                        className="outfit-image"
+                    />
                 </div>
             </div>
 
-            <button className="refresh-button">
-                <img
-                    src={refreshIcon}
-                    alt="Refresh outfit"
-                    className="refresh-icon"
-                />
+            <button className="refresh-button" onClick={handleRefresh}>
+                <img src={refreshIcon} alt="Refresh outfit" className="refresh-icon"/>
             </button>
-            <p>Don't like it? Refresh?</p>
+            <p>Don't like it? Refresh!</p>
         </div>
     );
 }
