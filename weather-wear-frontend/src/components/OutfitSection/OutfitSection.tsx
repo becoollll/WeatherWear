@@ -19,6 +19,7 @@ interface ClothingItem {
     high: number;
     low: number;
     weather_con: string;
+    image_url?: string;
 }
 
 /**
@@ -167,8 +168,8 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
                         )}
                     </div>
                     <img
-                        src={topPlaceholder}
-                        alt="Top recommendation"
+                        src={outfit.top?.image_url || topPlaceholder}
+                        alt={outfit.top?.clothing_type || "Top recommendation"}
                         className="outfit-image"
                     />
                 </div>
@@ -187,8 +188,8 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
                         )}
                     </div>
                     <img
-                        src={bottomPlaceholder}
-                        alt="Bottom recommendation"
+                        src={outfit.bottom?.image_url || bottomPlaceholder}
+                        alt={outfit.bottom?.clothing_type || "Bottom recommendation"}
                         className="outfit-image"
                     />
                 </div>
@@ -206,8 +207,8 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
                         )}
                     </div>
                     <img
-                        src={accessoryPlaceholder}
-                        alt="Accessory recommendation"
+                        src={outfit.accessory?.image_url || accessoryPlaceholder}
+                        alt={outfit.accessory?.clothing_type || "Accessory recommendation"}
                         className="outfit-image"
                     />
                 </div>
