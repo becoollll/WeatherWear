@@ -102,6 +102,8 @@
     padding: 0;
     cursor: pointer;
     transition: transform 0.2s ease;
+    width: 36px;
+    margin-left: 302px;
 }
 
 p {
