@@ -103,8 +103,10 @@ The backend relies on Docker. Please ensure you have **Docker Desktop** installe
     1. Create a new file at `weather-wear-frontend/.env.local`.
     2. Copy the `API URL` and `Publishable key` into the file like this:
        ```
-       VITE_SUPABASE_URL=http://127.0.0.1:54321
-       VITE_SUPABASE_ANON_KEY=your_anon_key_from_the_terminal
+       VITE_SUPABASE_URL=https://ixdfnmjzqpkszjyjqwmf.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4ZGZubWp6cXBrc3pqeWpxd21mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2ODM1MTksImV4cCI6MjA3NzI1OTUxOX0.DrL-ggXVNZzbqsEPO4f0nMnBL-MlALihZyZuOqk0WXE
+
+
        ```
 6.  **Stopping the Backend:**
 
