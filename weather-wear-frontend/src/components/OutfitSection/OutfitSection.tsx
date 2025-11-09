@@ -60,7 +60,6 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
 
         console.log("🌤️ Normalized weather:", condition, "Temp:", temp);
 
-        // 🔍 先測試：取得所有資料
         const { data: allData, error: allError } = await supabase
             .from("general-wardrobe")
             .select("*");
@@ -73,7 +72,7 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
             return;
         }
 
-        // 🔍 測試原本的查詢
+
         const { data: filteredData, error: filteredError } = await supabase
             .from("general-wardrobe")
             .select("*")
@@ -87,7 +86,7 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
             console.error(" Filter error:", filteredError);
         }
 
-        // 決定使用哪組資料：優先使用過濾後的，沒有則用全部
+
         const dataToUse = (filteredData && filteredData.length > 0) ? filteredData : allData;
 
         if (!dataToUse || dataToUse.length === 0) {
@@ -100,7 +99,7 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
             ? "✅ Using filtered data"
             : "⚠️ Using ALL data as fallback");
 
-        // 根據天氣條件過濾
+
         const weatherFiltered = dataToUse.filter(
             (item: ClothingItem) =>
                 item.weather_con === "all" ||
@@ -114,7 +113,7 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
             return;
         }
 
-        // 按類型分類
+
         const topTypes = ["sweatshirt", "t-shirt", "polo", "tanktop", "buttonup", "hoodie"];
         const bottomTypes = ["jeans", "sweatpants", "shorts"];
         const accessoryTypes = ["rainjacket", "jacket", "wintercoat", "overalls", "jumpsuit"];
@@ -129,7 +128,7 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
             accessories: accessories.length
         });
 
-        // 隨機選擇
+
         const randomPick = (arr: ClothingItem[]) =>
             arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null;
 

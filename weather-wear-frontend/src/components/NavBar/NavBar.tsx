@@ -1,4 +1,5 @@
 import '../NavBar/NavBar.css';
+import { FaUser , FaHome,FaTshirt} from "react-icons/fa";
 import {useState} from "react";
 
 export default function Sidebar() {
@@ -12,9 +13,9 @@ export default function Sidebar() {
 
             <div className={`sidebar-dropdown ${open ? 'open' : ''}`}>
                 <ul>
-                    <li>🏠 Home</li>
-                    <li>👤 Profile</li>
-                    <li>👕 Wardrobe</li>
+                    <li><FaHome size={15} color="white" />{" "} Home</li>
+                    <li><FaUser size={15} color="white" />{" "} Profile</li>
+                    <li><FaTshirt size={15} color="white" />{" "} Wardrobe</li>
                 </ul>
             </div>
         </div>
