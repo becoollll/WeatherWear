@@ -16,7 +16,9 @@ export default function Sidebar() {
                 <ul>
                     <Link to='/'> <li><FaHome size={15} color="white" />{" "} Home</li> </Link>
                     <li><FaUser size={15} color="white" />{" "} Profile</li>
-                    <li><FaTshirt size={15} color="white" />{" "} Wardrobe</li>
+                    <Link to='/wardrobe'>
+                      <li><FaTshirt size={15} color="white" />{" "} Wardrobe</li>
+                    </Link>
                 </ul>
             </div>
         </div>
