@@ -1,6 +1,6 @@
 .wardrobe-page {
   width: 90%;
-  padding: 40px 20px 0px 30px;
+  padding: 40px 20px 40px 30px;
   display: flex;
   flex-direction: column;
   gap: 32px;

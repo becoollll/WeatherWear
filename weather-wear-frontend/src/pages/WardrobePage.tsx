@@ -19,6 +19,10 @@ const initialItems: WardrobeItem[] = [
   { id: 4, name: "White Pants", type: "bottom", icon: "👖" },
   { id: 5, name: "Black Shorts", type: "bottom", icon: "🩳" },
   { id: 6, name: "Sunglasses", type: "other", icon: "🕶️" },
+  { id: 7, name: "Sunglasses", type: "other", icon: "🕶️" },
+  { id: 8, name: "Sunglasses", type: "other", icon: "🕶️" },
+  { id: 9, name: "Sunglasses", type: "other", icon: "🕶️" },
+  { id: 10, name: "Sunglasses", type: "other", icon: "🕶️" }
 ];
 
 export default function WardrobePage() {
@@ -76,7 +80,7 @@ export default function WardrobePage() {
 
               // always render 4 slots; "+" placeholders for empty slots
               const slots: (WardrobeItem | { id: number; icon: string })[] = [...catItems];
-              while (slots.length < 4) {
+              while (slots.length % 4 !== 0) {
                 slots.push({ id: -1000 - slots.length, icon: "+" });
               }
 
