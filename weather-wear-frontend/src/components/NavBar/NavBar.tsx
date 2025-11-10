@@ -14,10 +14,13 @@ export default function Sidebar() {
             <div className={`sidebar-dropdown ${open ? 'open' : ''}`}>
                 <ul>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                     <li>🏠 Home</li>
                     <li>👤 Profile</li>
                     <li>👕 Wardrobe</li>
 =======
+=======
+>>>>>>> Stashed changes
                     <Link to = "/"> <li><FaHome size={15} color="white" />{" "} Home</li> </Link>
                     <li><FaUser size={15} color="white" />{" "} Profile</li>
                     <li><FaTshirt size={15} color="white" />{" "} Wardrobe</li>
