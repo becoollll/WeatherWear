@@ -1,0 +1,138 @@
+.loginpage-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    background-color: #faf7e9;
+    overflow: hidden;
+}
+
+.login-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-box {
+    background-color: #b8e1e7;
+    padding: 3rem 4rem;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    min-width: 350px;
+}
+
+.login-icon {
+    font-size: 4rem;
+    color: #ffffff;
+    background-color: #94cfd5;
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.login-title {
+    font-size: 2rem;
+    color: #ffffff;
+    margin-bottom: 2rem;
+    font-weight: 500;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border-radius: 25px;
+    padding: 0.5rem 1rem;
+}
+
+.input-group input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 1rem;
+    background-color: transparent;
+}
+
+.input-icon {
+    margin-right: 0.5rem;
+    color: #888;
+    font-size: 1.2rem;
+}
+
+.remember-section {
+    text-align: left;
+    color: #f6fff6;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn-login,
+.btn-signup {
+    border: none;
+    border-radius: 25px;
+    padding: 0.6rem 2rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-login {
+    background-color: #ffffff;
+    color: #3c8dbc;
+    border: 2px solid #3c8dbc;
+}
+
+.btn-login:hover {
+    background-color: #646cffaa;
+    color: #ffffff;
+}
+
+.btn-signup {
+    background-color: #6AD4DD;
+    color: #ffffff;
+    border: none;
+}
+
+.btn-signup:hover {
+    background-color: #646cffaa;
+}
+
+.forgot-link {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: #666;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.forgot-link:hover {
+    text-decoration: underline;
+    color: #3c8dbc;
+    opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .login-box {
+        width: 85%;
+        padding: 2rem;
+    }
+}
