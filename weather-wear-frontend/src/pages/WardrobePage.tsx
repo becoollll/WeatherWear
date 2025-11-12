@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import Sidebar from "../components/NavBar/NavBar.tsx";
 import TopBar from "../components/TopBar/TopBar.tsx";
 import "./WardrobePage.css";
+import { useNavigate } from "react-router-dom";
 
 interface WardrobeItem {
   id: number;
@@ -27,6 +28,7 @@ const initialItems: WardrobeItem[] = [
 
 export default function WardrobePage() {
   // Wardrobe: pure frontend state
+  const navigate = useNavigate();
   const [items, setItems] = useState<WardrobeItem[]>(initialItems);
   const [units, setUnits] = useState<"metric" | "imperial">("imperial");
 
@@ -94,7 +96,7 @@ export default function WardrobePage() {
                           <div className="wardrobe-icon">{slot.icon}</div>
                           <div className="wardrobe-name">{(slot as WardrobeItem).name}</div>
                           <div className="wardrobe-actions">
-                            <button className="btn edit" onClick={() => alert("Edit (demo)")}>Edit</button>
+                            <button className="btn edit" onClick={() => navigate(`/edit/${slot.id}`)}>Edit</button>
                             <button className="btn remove" onClick={() => removeItem(slot.id)}>Remove</button>
                             <button
                               className={`btn fav ${(slot as WardrobeItem).favorite ? "on" : ""}`}

@@ -1,0 +1,149 @@
+.editpage-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f8f6e9;
+    min-height: 100dvh;
+    width: 100vw;
+}
+
+.editpage-main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-items: flex-start;
+    gap: 60px;
+    margin-top: 40px;
+}
+
+.form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 400px;
+}
+.dropdown {
+    width: 100%;
+    padding: 14px 40px 14px 20px;
+    border: none;
+    border-radius: 25px;
+    background-color: white;
+    font-size: 16px;
+    font-weight: 600;
+    color: #555;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    background-image: url("data:image/svg+xml;utf8,<svg fill='%2364a3b4' height='22' viewBox='0 0 24 24' width='22' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 18px;
+
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.25s ease;
+}
+
+.dropdown:hover {
+    background-color: #fefefe;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown:focus {
+    outline: none;
+    background-color: #f9ffff;
+    box-shadow: 0 0 0 3px rgba(100, 195, 210, 0.3);
+}
+.temperature-options {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.temp-btn {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background-color: #f2f2f2;
+    cursor: pointer;
+}
+
+.temp-btn.active {
+    background-color: #9ddbdc;
+    color: white;
+}
+
+.color-picker input {
+    margin-left: 8px;
+    cursor: pointer;
+}
+
+.button-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.button-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.btn-save,
+.btn-addmore,
+.btn-cancel {
+    border: none;
+    border-radius: 25px;
+    padding: 10px 28px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-save {
+    background-color: #9ddbdc;
+    color: white;
+}
+.btn-save:hover {
+    background-color: #7AA2E3;
+}
+
+.btn-addmore {
+    background-color: #64bcd1;
+    color: white;
+}
+.btn-addmore:hover {
+    background-color: #7AA2E3;
+}
+
+.btn-cancel {
+    background-color: #d9d9d9;
+    color: white;
+    width: 240px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+.btn-cancel:hover {
+    background-color: #c3c3c3;
+}
+.preview-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 800px;
+}
+.color-dot {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    pointer-events: none;
+}
