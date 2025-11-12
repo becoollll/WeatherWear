@@ -3,17 +3,32 @@ import { FaUser , FaLock} from "react-icons/fa";
 import Sidebar from "../components/NavBar/NavBar.tsx";
 import "../pages/LoginPage.css";
 import { useNavigate } from "react-router-dom";
+import { loginWithEmailPassword } from "../lib/auth.ts";
 
 export default function LoginPage() {
-    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [rememberMe, setRememberMe] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false); // TODO: expand to sessionStorage
+    const [loading, setLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const navigate = useNavigate();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
+        setErrorMsg(null);
+        try {
+            const { error } = await loginWithEmailPassword(email, password);
+            if (error) throw error;
 
-        console.log("Logging in:", { username, password, rememberMe });
+            // Supabase automatically persists session (localStorage)
+            // Redirect to home page
+            navigate("/");
+        } catch (err: any) {
+            setErrorMsg(err?.message ?? "Login failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -32,10 +47,10 @@ export default function LoginPage() {
                                 <FaUser size={18} color="gray" />
                             </span>
                             <input
-                                type="text"
-                                placeholder="Username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                type="email"
+                                placeholder="Email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 required
                             />
                         </div>
@@ -64,9 +79,11 @@ export default function LoginPage() {
                             </label>
                         </div>
 
+                        {errorMsg && <div style={{ color: "#d9534f", fontSize: 12, marginBottom: 8 }}>{errorMsg}</div>}
+
                         <div className="button-group">
-                            <button type="submit" className="btn-login">
-                                Login
+                            <button type="submit" className="btn-login" disabled={loading}>
+                                {loading ? "Logging in..." : "Login"}
                             </button>
                             <button type="button" className="btn-signup"
                                     onClick={() => navigate("/signup")}>
@@ -74,7 +91,7 @@ export default function LoginPage() {
                             </button>
                         </div>
 
-                        <div className="forgot-link">Forget Username / Password?</div>
+                        <div className="forgot-link">Forget Password?</div>
                     </form>
                 </div>
             </div>
