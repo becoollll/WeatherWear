@@ -182,3 +182,17 @@
 .unit-toggle span.active {
     color: #444444;
 }
+
+.login-username {
+    color: #444444;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: #333;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
