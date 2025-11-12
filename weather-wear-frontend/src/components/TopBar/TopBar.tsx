@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { supabase } from "../../supabaseClient";
+import { getCurrentUser, logout } from "../../lib/auth";
 import '../TopBar/TopBar.css';
 
 import logo from '../TopBar/raining.png';
@@ -22,6 +24,27 @@ export default function TopBar({ locationName, error, isLoading, currentUnit, on
     const handleToggle = () => {
         const newUnit = currentUnit === 'metric' ? 'imperial' : 'metric';
         onUnitChange(newUnit);
+    };
+
+    const navigate = useNavigate();
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        getCurrentUser().then(u => mounted && setUserEmail(u?.email ?? null));
+        const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUserEmail(session?.user?.email ?? null);
+        });
+        return () => {
+            mounted = false;
+            sub?.subscription?.unsubscribe();
+        };
+    }, []);
+
+    const handleLogout = async () => {
+        await logout();
+        setUserEmail(null);
+        navigate("/login");
     };
 
     // Handle form submission
@@ -67,7 +90,14 @@ export default function TopBar({ locationName, error, isLoading, currentUnit, on
                 <span className={currentUnit === 'metric' ? 'active' : ''}>°C</span>
             </div>
             <section className="topbar-login">
-                <Link to="/login" className="login-link">Login | Register</Link>
+                {userEmail ? (
+                  <div className="login-link">
+                    <span className="login-username">Hi, {userEmail}</span>{" | "}
+                    <button className="logout-btn" onClick={handleLogout}>Logout</button>
+                  </div>
+                ) : (
+                  <Link to="/login" className="login-link">Login | Register</Link>
+                )}
                 <a href="#" className="profile-section">
                     <img src={userPlaceholder} alt="User Profile" className="profile-img" />
                 </a>
