@@ -185,21 +185,3 @@
     opacity: 0.9;
     pointer-events: none;
 }
-
-.signup-message {
-    text-align: center;
-    width: 100%;
-    border: none;
-    border-radius: 25px;
-    padding: 10px 0;
-    font-size: 15px;
-    font-weight: 500;
-    margin-top: 10px;
-    cursor: pointer;
-    background-color: #6AD4DD;
-    color: #ffffff;
-}
-
-.signup-message:empty {
-    display: none;
-}
