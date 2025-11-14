@@ -5,16 +5,24 @@ import EditPage from "./pages/EditPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import './App.css';
+import { AuthProvider } from "./lib/AuthProvider";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
     return (
+      <AuthProvider>
         <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/wardrobe" element={<WardrobePage />} />
-            <Route path="/edit/:id" element={<EditPage />} />
+            <Route path="/wardrobe" element={
+              <ProtectedRoute><WardrobePage /></ProtectedRoute>
+            } />
+            <Route path="/edit/:id" element={
+              <ProtectedRoute><EditPage /></ProtectedRoute>
+            } />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
         </Routes>
+      </AuthProvider>
     );
 }
 
