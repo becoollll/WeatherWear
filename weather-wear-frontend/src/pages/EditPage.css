@@ -136,12 +136,16 @@
     align-items: center;
     width: 800px;
 }
+.preview-image svg {
+    width: 400px;
+    height: 400px;
+}
 .color-dot {
     position: absolute;
-    right: 8px;
+    right: 1px;
     bottom: 8px;
-    width: 18px;
-    height: 18px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     border: 2px solid #fff;
     box-shadow: 0 1px 4px rgba(0,0,0,.25);
