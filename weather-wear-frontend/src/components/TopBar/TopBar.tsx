@@ -28,13 +28,56 @@ export default function TopBar({ locationName, error, isLoading, currentUnit, on
 
     const navigate = useNavigate();
     const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [displayName, setDisplayName] = useState<string | null>(null); // username or email
 
     useEffect(() => {
         let mounted = true;
-        getCurrentUser().then(u => mounted && setUserEmail(u?.email ?? null));
-        const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUserEmail(session?.user?.email ?? null);
+
+        async function loadUserAndProfile() {
+          const u = await getCurrentUser();
+          if (!mounted) return;
+
+          const email = u?.email ?? null;
+          setUserEmail(email);
+
+          if (u?.id) {
+            const { data } = await supabase
+              .from("profiles")
+              .select("username")
+              .eq("id", u.id)
+              .maybeSingle();
+
+            if (!mounted) return;
+
+            const username = (data as any)?.username as string | null;
+            setDisplayName(username || email);
+          } else {
+            setDisplayName(email);
+          }
+        }
+
+        loadUserAndProfile();
+
+        const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+          if (!session?.user) {
+            setUserEmail(null);
+            setDisplayName(null);
+            return;
+          }
+
+          const email = session.user.email ?? null;
+          setUserEmail(email);
+
+          const { data } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", session.user.id)
+            .maybeSingle();
+
+          const username = (data as any)?.username as string | null;
+          setDisplayName(username || email);
         });
+
         return () => {
             mounted = false;
             sub?.subscription?.unsubscribe();
@@ -44,6 +87,7 @@ export default function TopBar({ locationName, error, isLoading, currentUnit, on
     const handleLogout = async () => {
         await logout();
         setUserEmail(null);
+        setDisplayName(null);
         navigate("/login");
     };
 
@@ -92,11 +136,15 @@ export default function TopBar({ locationName, error, isLoading, currentUnit, on
             <section className="topbar-login">
                 {userEmail ? (
                   <div className="login-link">
-                    <span className="login-username">Hi, {userEmail}</span>{" | "}
+                    <span className="login-username">Hi, {displayName ?? userEmail}</span>{" | "}
                     <button className="logout-btn" onClick={handleLogout}>Logout</button>
                   </div>
                 ) : (
-                  <Link to="/login" className="login-link">Login | Register</Link>
+                  <div className="login-link">
+                    <Link to="/login" className="login-link">Login</Link>
+                    <span style={{ margin: "0 4px" }}>|</span>
+                    <Link to="/signup" className="login-link">Register</Link>
+                  </div>
                 )}
                 <a href="#" className="profile-section">
                     <img src={userPlaceholder} alt="User Profile" className="profile-img" />
