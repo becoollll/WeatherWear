@@ -16,3 +16,7 @@ export async function getCurrentUser() {
   const { data } = await supabase.auth.getUser();
   return data.user ?? null;
 }
+
+export async function sendPasswordReset(email: string, options?: { redirectTo?: string }) {
+  return supabase.auth.resetPasswordForEmail(email, options);
+}
