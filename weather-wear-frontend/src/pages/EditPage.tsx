@@ -153,7 +153,7 @@ export default function EditPage() {
         }
 
         const generalWardrobeType = clothingCategory
-            ? clothingCategory.charAt(0).toLowerCase() + clothingCategory.slice(1)
+            ? clothingCategory.charAt(0).toUpperCase() + clothingCategory.slice(1)
             : null;
 
         if (!generalWardrobeType) {
