@@ -56,11 +56,12 @@
 }
 
 .wardrobe-plus { font-size: 42px; line-height: 1; }
-.wardrobe-image {
-    width: 75px;       /* fixed width for images */
-    height: 75px;      /* fixed height for images */
-    object-fit: cover;  /* keeps aspect ratio without stretching */
-    border-radius: 10px; /* optional, makes it look nicer */
+.wardrobe-image svg {
+    width: 100%;
+    height: 100%;
+    max-width: 100px; /* or whatever your .wardrobe-image normally has */
+    max-height: 100px;
+    object-fit: contain;
 }
 .wardrobe-name { font-size: 13px; font-weight: 600; color: #444; }
 
