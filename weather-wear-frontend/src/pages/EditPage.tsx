@@ -168,7 +168,7 @@ export default function EditPage() {
 
         // Derive the general type (e.g., 'top' -> 'Top') for the 'type' column in personal-wardrobe
         const generalWardrobeType = clothingCategory
-            ? clothingCategory.charAt(0).toUpperCase() + clothingCategory.slice(1)
+            ? clothingCategory.charAt(0).toLowerCase() + clothingCategory.slice(1)
             : null;
 
         if (!generalWardrobeType) {
