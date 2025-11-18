@@ -37,7 +37,9 @@ export default function UpdatePage() {
     const [clothingCategory, setClothingCategory] = useState("");
     const [type, setType] = useState("");
     const [weather, setWeather] = useState("");
-    const [temperature, setTemperature] = useState<"high" | "low" | "">("");
+    const [highTemp, setHighTemp] = useState<string>("");
+    const [lowTemp, setLowTemp] = useState<string>("");
+
     const [color, setColor] = useState("#a8b0ff");
     const [favorited, setFavorited] = useState(false);
 
@@ -76,6 +78,7 @@ export default function UpdatePage() {
             const uniqueCategories = [...new Set(storedData.map((item) => item.clothing_category))]
                 .filter(cat => cat && cat.trim() !== "");
             setCategoriesList(uniqueCategories);
+
             const { data: wardrobeData, error: wardrobeError } = await supabase
                 .from("general-wardrobe")
                 .select("weather_con");
@@ -103,20 +106,13 @@ export default function UpdatePage() {
             const item = itemData as PersonalWardrobeItem;
 
             setClothingCategory(item.type.toLowerCase());
-
             setType(item.clothing_type);
-
             setWeather(item.weather_con);
             setColor(item.color);
             setFavorited(item.favorited);
+            setHighTemp(item.high !== undefined ? String(item.high) : "");
+            setLowTemp(item.low !== undefined ? String(item.low) : "");
 
-            if (item.high === 1) {
-                setTemperature("high");
-            } else if (item.low === 1) {
-                setTemperature("low");
-            } else {
-                setTemperature("");
-            }
 
             setIsDataLoading(false);
         };
@@ -182,8 +178,16 @@ export default function UpdatePage() {
             return;
         }
 
-        if (!clothingCategory || !type || !weather || !temperature || !color) {
-            alert("Please fill out all required fields (Category, Type, Temperature, Weather, and Color).");
+        if (!clothingCategory || !type || !weather || !highTemp || !lowTemp || !color) {
+            alert("Please fill out all required fields (Category, Type, High Temp, Low Temp, Weather, and Color).");
+            return;
+        }
+
+        const parsedHighTemp = parseInt(highTemp, 10);
+        const parsedLowTemp = parseInt(lowTemp, 10);
+
+        if (parsedHighTemp < parsedLowTemp) {
+            alert("Error: The Highest temperature must be greater than or equal to the Lowest temperature.");
             return;
         }
 
@@ -196,13 +200,10 @@ export default function UpdatePage() {
             return;
         }
 
-        const isHigh = temperature === "high" ? 1 : 0;
-        const isLow = temperature === "low" ? 1 : 0;
-
         const updatedClothingItem = {
             clothing_type: type,
-            high: isHigh,
-            low: isLow,
+            high: parsedHighTemp,
+            low: parsedLowTemp,
             color: color,
             weather_con: weather,
             image_url: imageUrl,
@@ -285,21 +286,27 @@ export default function UpdatePage() {
                                 </option>
                             ))}
                         </select>
-
-                        <div className="temperature-options">
-                            <button
-                                className={`temp-btn ${temperature === "high" ? "active" : ""}`}
-                                onClick={() => setTemperature("high")}
-                            >
-                                High
-                            </button>
-                            <button
-                                className={`temp-btn ${temperature === "low" ? "active" : ""}`}
-                                onClick={() => setTemperature("low")}
-                            >
-                                Low
-                            </button>
-
+                        <div className="temperature-inputs">
+                            <label className="temp-input-label">
+                                Highest Temp (°F)
+                                <input
+                                    type="number"
+                                    value={highTemp}
+                                    onChange={(e) => setHighTemp(e.target.value)}
+                                    placeholder="Max"
+                                    className="temp-input"
+                                />
+                            </label>
+                            <label className="temp-input-label">
+                                Lowest Temp (°F)
+                                <input
+                                    type="number"
+                                    value={lowTemp}
+                                    onChange={(e) => setLowTemp(e.target.value)}
+                                    placeholder="Min"
+                                    className="temp-input"
+                                />
+                            </label>
                             <label className="color-picker">
                                 Select Color 🎨
                                 <input

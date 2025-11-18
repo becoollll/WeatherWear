@@ -58,24 +58,47 @@
     background-color: #f9ffff;
     box-shadow: 0 0 0 3px rgba(100, 195, 210, 0.3);
 }
-.temperature-options {
+
+.temperature-inputs {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-end;
+    gap: 20px;
+    width: 100%;
 }
 
-.temp-btn {
+.temp-input-label {
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a4a4a;
+    gap: 5px;
+}
+
+.temp-input {
+    width: 100px;
+    padding: 10px 10px;
     border: none;
-    padding: 8px 16px;
-    border-radius: 20px;
-    background-color: #FFFFFF;
-    cursor: pointer;
-    color:black;
+    border-radius: 15px;
+    background-color: white;
+    font-size: 15px;
+    font-weight: 500;
+    color: black;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.25s ease;
 }
 
-.temp-btn.active {
-    background-color: #9ddbdc;
-    color: white;
+.temp-input:hover {
+    background-color: #fefefe;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.temp-input:focus {
+    outline: none;
+    background-color: #f9ffff;
+    box-shadow: 0 0 0 3px rgba(100, 195, 210, 0.3);
 }
 
 .color-picker input {
