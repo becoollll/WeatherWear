@@ -18,19 +18,15 @@ export default function WardrobePage() {
 
     const [items, setItems] = useState<WardrobeItem[]>([]);
     const [units, setUnits] = useState<"metric" | "imperial">("imperial");
-
     const [locationName, setLocationName] = useState<string>("Alexandria, VA");
     const [isLoading, setIsLoading] = useState(false);
     const [error] = useState<string | null>(null);
-
-    // TopBar Handlers
     const handleUnitChange = (u: "metric" | "imperial") => setUnits(u);
     const handleSearch = (q: string) => {
         const next = q.trim();
         if (next) setLocationName(next);
     };
 
-    // Fetch wardrobe items from Supabase
     useEffect(() => {
         const fetchWardrobe = async () => {
             setIsLoading(true);
@@ -49,37 +45,47 @@ export default function WardrobePage() {
             setIsLoading(false);
         };
 
+        // Note: Adding a real-time subscription is often better for a Wardrobe page
+        // const subscription = supabase
+        //     .from("personal-wardrobe")
+        //     .on("POSTGRES_CHANGES", {
+        //         event: "*",
+        //         schema: "public",
+        //         table: "personal-wardrobe"
+        //     }, () => {
+        //         fetchWardrobe();
+        //     })
+        //     .subscribe();
+
         fetchWardrobe();
         console.log("Fetching wardrobe...");
         console.log("Table: personal-wardrobe");
+
+        // return () => {
+        //     // supabase.removeSubscription(subscription);
+        // };
     }, []);
 
+    const toggleFavorite = async (id: number, currentFavorited: boolean | undefined) => {
+        const newFavorited = !currentFavorited;
+        console.log("Toggling id:", id, "from", currentFavorited, "to", newFavorited);
 
-    // Wardrobe actions
-    // Broken? Can toggle on, cannot toggle off
-    const toggleFavorite = async (id: number) => {
-        const item = items.find(i => i.id === id);
-        if (!item) return;
-
-        const newFavorited = !item.favorited;
-        console.log("Toggling id:", id, "from", item.favorited, "to", newFavorited);
-
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from("personal-wardrobe")
-            .update({ favorited: Boolean(newFavorited) })
-            .eq("id", id) // or id.toString() if DB id is text
+            .update({ favorited: newFavorited })
+            .eq("id", id)
             .select();
 
         if (error) {
             console.error("Supabase update failed:", error.message);
         } else {
-            console.log("Supabase update success:", data);
+            // Optimistically update the local state
             setItems(prev =>
                 prev.map(i => i.id === id ? { ...i, favorited: newFavorited } : i)
             );
         }
     };
-    // Removes from database (needs to add confirmation)
+
     const removeItem = async (id: number) => {
         const { error } = await supabase
             .from("personal-wardrobe")
@@ -91,7 +97,14 @@ export default function WardrobePage() {
         }
     };
 
-    // CATEGORY CONFIG
+    const handleEdit = (id: number) => {
+        navigate(`/edit/${id}`);
+    }
+
+    const handleAddItem = () => {
+        navigate(`/edit`);
+    }
+
     const categories = useMemo(
         () =>
             [
@@ -119,9 +132,8 @@ export default function WardrobePage() {
                 <div className="main-sections">
                     <div className="wardrobe-page">
                         {categories.map(cat => {
-                            const catItems = items.filter(i => i.type === cat.type);
+                            const catItems = items.filter(i => i.type.toLowerCase() === cat.type); // ensure case matching
 
-                        // ensure at least 4 slots so the user always sees + buttons
                             const minSlots = 4;
                             const slots: (WardrobeItem | { id: number; empty: true })[] =
                                 catItems.length > 0 ? [...catItems] : [];
@@ -137,7 +149,11 @@ export default function WardrobePage() {
                                     <div className="wardrobe-grid">
                                         {slots.map(slot =>
                                             "empty" in slot ? (
-                                                <div key={slot.id} className="wardrobe-card empty">
+                                                <div
+                                                    key={slot.id}
+                                                    className="wardrobe-card empty"
+                                                    onClick={handleAddItem}
+                                                >
                                                     <div className="wardrobe-plus">+</div>
                                                 </div>
                                             ) : (
@@ -153,7 +169,7 @@ export default function WardrobePage() {
                                                     <div className="wardrobe-actions">
                                                         <button
                                                             className="btn edit"
-                                                            onClick={() => navigate(`/edit/${slot.id}`)}
+                                                            onClick={() => handleEdit(slot.id)}
                                                         >
                                                             Edit
                                                         </button>
@@ -166,13 +182,10 @@ export default function WardrobePage() {
                                                         </button>
 
                                                         <button
-
                                                             className={`btn fav ${slot.favorited ? "on" : ""}`}
-
                                                             onClick={() => {
-                                                                console.log("Current favorited value:", slot.favorited);
-                                                                toggleFavorite(slot.id);
                                                                 console.log("Updating id:", slot.id);
+                                                                toggleFavorite(slot.id, slot.favorited);
                                                             }}
                                                         >
                                                             ★
