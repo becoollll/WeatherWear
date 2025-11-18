@@ -320,11 +320,11 @@ export default function EditPage() {
                             <div className="button-row">
                                 {/* UPDATED TO CALL handleSave with 'only' */}
                                 <button className="btn-save" onClick={() => handleSave('only')}>
-                                    Only Save This
+                                    Save To Wardrobe
                                 </button>
-                                <button className="btn-addmore" onClick={() => handleSave('add_more')}>
-                                    Add More
-                                </button>
+                                {/*<button className="btn-addmore" onClick={() => handleSave('add_more')}>*/}
+                                {/*    Add More*/}
+                                {/*</button>*/}
                             </div>
                             <button className="btn-cancel">Cancel</button>
                         </div>
