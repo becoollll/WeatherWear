@@ -11,7 +11,6 @@ interface WardrobeItem {
     type: "top" | "bottom" | "other";
     image_url?: string;
     favorited?: boolean;
-    color?: string;
 }
 
 export default function WardrobePage() {
@@ -19,20 +18,19 @@ export default function WardrobePage() {
 
     const [items, setItems] = useState<WardrobeItem[]>([]);
     const [units, setUnits] = useState<"metric" | "imperial">("imperial");
+
     const [locationName, setLocationName] = useState<string>("Alexandria, VA");
     const [isLoading, setIsLoading] = useState(false);
     const [error] = useState<string | null>(null);
 
-
-    const [svgMap, setSvgMap] = useState<Record<number, string>>({});
-
+    // TopBar Handlers
     const handleUnitChange = (u: "metric" | "imperial") => setUnits(u);
     const handleSearch = (q: string) => {
         const next = q.trim();
         if (next) setLocationName(next);
     };
 
-    // Fetch wardrobe
+    // Fetch wardrobe items from Supabase
     useEffect(() => {
         const fetchWardrobe = async () => {
             setIsLoading(true);
@@ -51,55 +49,51 @@ export default function WardrobePage() {
             setIsLoading(false);
         };
 
+        // Note: Adding a real-time subscription is often better for a Wardrobe page
+        // const subscription = supabase
+        //     .from("personal-wardrobe")
+        //     .on("POSTGRES_CHANGES", {
+        //         event: "*",
+        //         schema: "public",
+        //         table: "personal-wardrobe"
+        //     }, () => {
+        //         fetchWardrobe();
+        //     })
+        //     .subscribe();
+
         fetchWardrobe();
+        console.log("Fetching wardrobe...");
+        console.log("Table: personal-wardrobe");
+
+        // return () => {
+        //     // supabase.removeSubscription(subscription);
+        // };
     }, []);
 
-    // ⭐ FETCH & RECOLOR SVGs AFTER LOADING ITEMS
-    useEffect(() => {
-        items.forEach(async (item) => {
-            if (!item.image_url?.endsWith(".svg")) return;
 
-            try {
-                const res = await fetch(item.image_url);
-                let svg = await res.text();
+    // Wardrobe actions
+    // FIX: Requires passing the current favorited state to correctly toggle the database value.
+    const toggleFavorite = async (id: number, currentFavorited: boolean | undefined) => {
+        const newFavorited = !currentFavorited;
+        console.log("Toggling id:", id, "from", currentFavorited, "to", newFavorited);
 
-                if (item.color) {
-                    // Replace all fill attributes with user color
-                    svg = svg.replace(/fill="[^"]*"/g, `fill="${item.color}"`);
-                }
+        const { error } = await supabase
+            .from("personal-wardrobe")
+            .update({ favorited: newFavorited }) // Updated to use the calculated boolean
+            .eq("id", id)
+            .select();
 
-                setSvgMap(prev => ({ ...prev, [item.id]: svg }));
-            } catch (error) {
-                console.error("Error loading SVG:", error);
-            }
-        });
-    }, [items]);
+        if (error) {
+            console.error("Supabase update failed:", error.message);
+        } else {
+            // Optimistically update the local state
+            setItems(prev =>
+                prev.map(i => i.id === id ? { ...i, favorited: newFavorited } : i)
+            );
+        }
+    };
 
-    // ⭐ FIXED FAVORITE TOGGLE
-    // const toggleFavorite = async (id: number) => {
-    //     const item = items.find(i => i.id === id);
-    //     if (!item) return;
-    //
-    //     const newFavorited = !item.favorited;
-    //
-    //     const { error } = await supabase
-    //         .from("personal-wardrobe")
-    //         .update({ favorited: newFavorited })
-    //         .eq("id", id);
-    //
-    //     if (error) {
-    //         console.error("Supabase update failed:", error.message);
-    //         return;
-    //     }
-    //
-    //     setItems(prev =>
-    //         prev.map(i =>
-    //             i.id === id ? { ...i, favorited: newFavorited } : i
-    //         )
-    //     );
-    // };
-
-    // ⭐ REMOVE ITEM
+    // Removes from database (needs to add confirmation)
     const removeItem = async (id: number) => {
         const { error } = await supabase
             .from("personal-wardrobe")
@@ -111,13 +105,20 @@ export default function WardrobePage() {
         }
     };
 
+    // CONNECTION TO UPDATE PAGE: Dedicated function for clarity
+    const handleEdit = (id: number) => {
+        // Navigates to the route expected by the new UpdatePage component
+        navigate(`/edit/${id}`);
+    }
+
     // CATEGORY CONFIG
     const categories = useMemo(
-        () => [
-            { label: "TOP", type: "top" },
-            { label: "BOTTOM", type: "bottom" },
-            { label: "OTHERS", type: "other" },
-        ] as const,
+        () =>
+            [
+                { label: "TOP", type: "top" as const },
+                { label: "BOTTOM", type: "bottom" as const },
+                { label: "OTHERS", type: "other" as const },
+            ] as const,
         []
     );
 
@@ -138,13 +139,15 @@ export default function WardrobePage() {
                 <div className="main-sections">
                     <div className="wardrobe-page">
                         {categories.map(cat => {
-                            const catItems = items.filter(i => i.type === cat.type);
+                            const catItems = items.filter(i => i.type.toLowerCase() === cat.type); // ensure case matching
 
+                            // ensure at least 4 slots so the user always sees + buttons
                             const minSlots = 4;
-                            const slots = [...catItems];
+                            const slots: (WardrobeItem | { id: number; empty: true })[] =
+                                catItems.length > 0 ? [...catItems] : [];
 
                             while (slots.length < minSlots || slots.length % 4 !== 0) {
-                                slots.push({ id: -1000 - slots.length, empty: true } as any);
+                                slots.push({ id: -1000 - slots.length, empty: true });
                             }
 
                             return (
@@ -159,31 +162,19 @@ export default function WardrobePage() {
                                                 </div>
                                             ) : (
                                                 <div key={slot.id} className="wardrobe-card">
-                                                    {slot.image_url?.endsWith(".svg") ? (
-                                                        <div
-                                                            className="wardrobe-image"
-                                                            dangerouslySetInnerHTML={{
-                                                                __html: svgMap[slot.id] || "",
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <img
-                                                            src={slot.image_url || "/placeholder.png"}
-                                                            alt={slot.clothing_type}
-                                                            className="wardrobe-image"
-                                                        />
-                                                    )}
+                                                    <img
+                                                        src={slot.image_url || "/placeholder.png"}
+                                                        alt={slot.clothing_type}
+                                                        className="wardrobe-image"
+                                                    />
 
-                                                    <div className="wardrobe-name">
-                                                        {slot.clothing_type}
-                                                    </div>
+                                                    <div className="wardrobe-name">{slot.clothing_type}</div>
 
                                                     <div className="wardrobe-actions">
                                                         <button
                                                             className="btn edit"
-                                                            onClick={() =>
-                                                                navigate(`/edit/${slot.id}`)
-                                                            }
+                                                            // Use the new handleEdit function for clarity
+                                                            onClick={() => handleEdit(slot.id)}
                                                         >
                                                             Edit
                                                         </button>
@@ -195,14 +186,16 @@ export default function WardrobePage() {
                                                             Remove
                                                         </button>
 
-                                                        {/*<button*/}
-                                                        {/*    className={`btn fav ${*/}
-                                                        {/*        slot.favorited ? "on" : ""*/}
-                                                        {/*    }`}*/}
-                                                        {/*    onClick={() => toggleFavorite(slot.id)}*/}
-                                                        {/*>*/}
-                                                        {/*    ★*/}
-                                                        {/*</button>*/}
+                                                        <button
+                                                            className={`btn fav ${slot.favorited ? "on" : ""}`}
+                                                            // Pass the current favorited state for correct toggling
+                                                            onClick={() => {
+                                                                console.log("Updating id:", slot.id);
+                                                                toggleFavorite(slot.id, slot.favorited);
+                                                            }}
+                                                        >
+                                                            ★
+                                                        </button>
                                                     </div>
                                                 </div>
                                             )
