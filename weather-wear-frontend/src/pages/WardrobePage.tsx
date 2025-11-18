@@ -1,125 +1,193 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/NavBar/NavBar.tsx";
 import TopBar from "../components/TopBar/TopBar.tsx";
 import "./WardrobePage.css";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
 interface WardrobeItem {
-  id: number;
-  name: string;
-  type: "top" | "bottom" | "other";
-  favorite?: boolean;
-  icon: string; // hard coded icon (emoji)
+    id: number;
+    clothing_type: string;
+    type: "top" | "bottom" | "other";
+    image_url?: string;
+    favorited?: boolean;
 }
 
-// hard coded data, using emoji right now
-const initialItems: WardrobeItem[] = [
-  { id: 1, name: "Red Tee", type: "top", icon: "👕" },
-  { id: 2, name: "Light Jacket", type: "top", icon: "🧥" },
-  { id: 3, name: "Green Sweater", type: "top", icon: "🧶" },
-  { id: 4, name: "White Pants", type: "bottom", icon: "👖" },
-  { id: 5, name: "Black Shorts", type: "bottom", icon: "🩳" },
-  { id: 6, name: "Sunglasses", type: "other", icon: "🕶️" },
-  { id: 7, name: "Sunglasses", type: "other", icon: "🕶️" },
-  { id: 8, name: "Sunglasses", type: "other", icon: "🕶️" },
-  { id: 9, name: "Sunglasses", type: "other", icon: "🕶️" },
-  { id: 10, name: "Sunglasses", type: "other", icon: "🕶️" }
-];
-
 export default function WardrobePage() {
-  // Wardrobe: pure frontend state
-  const navigate = useNavigate();
-  const [items, setItems] = useState<WardrobeItem[]>(initialItems);
-  const [units, setUnits] = useState<"metric" | "imperial">("imperial");
+    const navigate = useNavigate();
 
-  // TEMP location state for Wardrobe page only.
-  // NOTE: This is intentionally local; will be extracted to a shared hook in a future PR.
-  const [locationName, setLocationName] = useState<string>("Alexandria, VA");
-  const [isLoading] = useState(false);
-  const [error] = useState<string | null>(null);
+    const [items, setItems] = useState<WardrobeItem[]>([]);
+    const [units, setUnits] = useState<"metric" | "imperial">("imperial");
 
-  // TopBar handlers
-  const handleUnitChange = (u: "metric" | "imperial") => setUnits(u);
-  const handleSearch = (q: string) => {
-    // For now, just update the displayed text. No API call here.
-    const next = q.trim();
-    if (next) setLocationName(next);
-  };
+    const [locationName, setLocationName] = useState<string>("Alexandria, VA");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error] = useState<string | null>(null);
 
-  // Wardrobe actions
-  const toggleFavorite = (id: number) =>
-    setItems(prev => prev.map(i => (i.id === id ? { ...i, favorite: !i.favorite } : i)));
-  const removeItem = (id: number) =>
-    setItems(prev => prev.filter(i => i.id !== id));
+    // TopBar Handlers
+    const handleUnitChange = (u: "metric" | "imperial") => setUnits(u);
+    const handleSearch = (q: string) => {
+        const next = q.trim();
+        if (next) setLocationName(next);
+    };
 
-  const categories = useMemo(
-    () =>
-      [
-        { label: "TOP", type: "top" as const },
-        { label: "BOTTOM", type: "bottom" as const },
-        { label: "OTHERS", type: "other" as const },
-      ] as const,
-    []
-  );
+    // Fetch wardrobe items from Supabase
+    useEffect(() => {
+        const fetchWardrobe = async () => {
+            setIsLoading(true);
 
-  return (
-    <div className="homepage-container">{/* reuse HomePage shell */}
-      <Sidebar />
-      <div className="main-content">
-        <TopBar
-          locationName={locationName}
-          error={error}
-          isLoading={isLoading}
-          currentUnit={units}
-          onUnitChange={handleUnitChange}
-          onSearch={handleSearch}
-        />
+            const { data, error } = await supabase
+                .from("personal-wardrobe")
+                .select("*");
 
-        <div className="main-sections">
-          <div className="wardrobe-page">
-            {categories.map(cat => {
-              const catItems = items.filter(i => i.type === cat.type);
+            if (error) {
+                console.error("❌ Error fetching wardrobe:", error);
+            } else {
+                console.log("👕 Loaded wardrobe:", data);
+                setItems(data as WardrobeItem[]);
+            }
 
-              // always render 4 slots; "+" placeholders for empty slots
-              const slots: (WardrobeItem | { id: number; icon: string })[] = [...catItems];
-              while (slots.length % 4 !== 0) {
-                slots.push({ id: -1000 - slots.length, icon: "+" });
-              }
+            setIsLoading(false);
+        };
 
-              return (
-                <section key={cat.type} className="wardrobe-section">
-                  <div className="wardrobe-section-header">{cat.label}</div>
-                  <div className="wardrobe-grid">
-                    {slots.map(slot =>
-                      slot.id > 0 ? (
-                        <div key={slot.id} className="wardrobe-card">
-                          <div className="wardrobe-icon">{slot.icon}</div>
-                          <div className="wardrobe-name">{(slot as WardrobeItem).name}</div>
-                          <div className="wardrobe-actions">
-                            <button className="btn edit" onClick={() => navigate(`/edit/${slot.id}`)}>Edit</button>
-                            <button className="btn remove" onClick={() => removeItem(slot.id)}>Remove</button>
-                            <button
-                              className={`btn fav ${(slot as WardrobeItem).favorite ? "on" : ""}`}
-                              onClick={() => toggleFavorite(slot.id)}
-                              title="Favorite"
-                            >
-                              ★
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div key={slot.id} className="wardrobe-card empty">
-                          <div className="wardrobe-plus">+</div>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
+        fetchWardrobe();
+        console.log("Fetching wardrobe...");
+        console.log("Table: personal-wardrobe");
+    }, []);
+
+
+    // Wardrobe actions
+    // Broken? Can toggle on, cannot toggle off
+    const toggleFavorite = async (id: number) => {
+        const item = items.find(i => i.id === id);
+        if (!item) return;
+
+        const newFavorited = !item.favorited;
+        console.log("Toggling id:", id, "from", item.favorited, "to", newFavorited);
+
+        const { data, error } = await supabase
+            .from("personal-wardrobe")
+            .update({ favorited: Boolean(newFavorited) })
+            .eq("id", id) // or id.toString() if DB id is text
+            .select();
+
+        if (error) {
+            console.error("Supabase update failed:", error.message);
+        } else {
+            console.log("Supabase update success:", data);
+            setItems(prev =>
+                prev.map(i => i.id === id ? { ...i, favorited: newFavorited } : i)
+            );
+        }
+    };
+    // Removes from database (needs to add confirmation)
+    const removeItem = async (id: number) => {
+        const { error } = await supabase
+            .from("personal-wardrobe")
+            .delete()
+            .eq("id", id);
+
+        if (!error) {
+            setItems(prev => prev.filter(i => i.id !== id));
+        }
+    };
+
+    // CATEGORY CONFIG
+    const categories = useMemo(
+        () =>
+            [
+                { label: "TOP", type: "top" as const },
+                { label: "BOTTOM", type: "bottom" as const },
+                { label: "OTHERS", type: "other" as const },
+            ] as const,
+        []
+    );
+
+    return (
+        <div className="homepage-container">
+            <Sidebar />
+
+            <div className="main-content">
+                <TopBar
+                    locationName={locationName}
+                    error={error}
+                    isLoading={isLoading}
+                    currentUnit={units}
+                    onUnitChange={handleUnitChange}
+                    onSearch={handleSearch}
+                />
+
+                <div className="main-sections">
+                    <div className="wardrobe-page">
+                        {categories.map(cat => {
+                            const catItems = items.filter(i => i.type === cat.type);
+
+                        // ensure at least 4 slots so the user always sees + buttons
+                            const minSlots = 4;
+                            const slots: (WardrobeItem | { id: number; empty: true })[] =
+                                catItems.length > 0 ? [...catItems] : [];
+
+                            while (slots.length < minSlots || slots.length % 4 !== 0) {
+                                slots.push({ id: -1000 - slots.length, empty: true });
+                            }
+
+                            return (
+                                <section key={cat.type} className="wardrobe-section">
+                                    <div className="wardrobe-section-header">{cat.label}</div>
+
+                                    <div className="wardrobe-grid">
+                                        {slots.map(slot =>
+                                            "empty" in slot ? (
+                                                <div key={slot.id} className="wardrobe-card empty">
+                                                    <div className="wardrobe-plus">+</div>
+                                                </div>
+                                            ) : (
+                                                <div key={slot.id} className="wardrobe-card">
+                                                    <img
+                                                        src={slot.image_url || "/placeholder.png"}
+                                                        alt={slot.clothing_type}
+                                                        className="wardrobe-image"
+                                                    />
+
+                                                    <div className="wardrobe-name">{slot.clothing_type}</div>
+
+                                                    <div className="wardrobe-actions">
+                                                        <button
+                                                            className="btn edit"
+                                                            onClick={() => navigate(`/edit/${slot.id}`)}
+                                                        >
+                                                            Edit
+                                                        </button>
+
+                                                        <button
+                                                            className="btn remove"
+                                                            onClick={() => removeItem(slot.id)}
+                                                        >
+                                                            Remove
+                                                        </button>
+
+                                                        <button
+
+                                                            className={`btn fav ${slot.favorited ? "on" : ""}`}
+
+                                                            onClick={() => {
+                                                                console.log("Current favorited value:", slot.favorited);
+                                                                toggleFavorite(slot.id);
+                                                                console.log("Updating id:", slot.id);
+                                                            }}
+                                                        >
+                                                            ★
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </section>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
