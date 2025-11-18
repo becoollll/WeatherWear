@@ -57,10 +57,11 @@
 
 .wardrobe-plus { font-size: 42px; line-height: 1; }
 .wardrobe-image {
-    width: 75px;       /* fixed width for images */
-    height: 75px;      /* fixed height for images */
-    object-fit: cover;  /* keeps aspect ratio without stretching */
-    border-radius: 10px; /* optional, makes it look nicer */
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .wardrobe-name { font-size: 13px; font-weight: 600; color: #444; }
 

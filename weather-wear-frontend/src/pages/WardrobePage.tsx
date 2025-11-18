@@ -11,10 +11,23 @@ interface WardrobeItem {
     type: "top" | "bottom" | "other";
     image_url?: string;
     favorited?: boolean;
+    color?: string;
 }
+
+const getCurrentUserUUID = async (): Promise<string | null> => {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.user?.id || null;
+    } catch (error) {
+        console.error("Error fetching Supabase session:", error);
+        return null;
+    }
+};
+
 
 export default function WardrobePage() {
     const navigate = useNavigate();
+    const [svgMap, setSvgMap] = useState<Record<number, string>>({});
 
     const [items, setItems] = useState<WardrobeItem[]>([]);
     const [units, setUnits] = useState<"metric" | "imperial">("imperial");
@@ -27,13 +40,23 @@ export default function WardrobePage() {
         if (next) setLocationName(next);
     };
 
+    // Fetch Wardrobe
     useEffect(() => {
         const fetchWardrobe = async () => {
             setIsLoading(true);
 
+            const userId = await getCurrentUserUUID();
+            if (!userId) {
+                console.error("❌ No logged-in user. Cannot fetch wardrobe.");
+                setItems([]);
+                setIsLoading(false);
+                return;
+            }
+
             const { data, error } = await supabase
                 .from("personal-wardrobe")
-                .select("*");
+                .select("*")
+                .eq("user_id", userId); // 👈 filter by current user
 
             if (error) {
                 console.error("❌ Error fetching wardrobe:", error);
@@ -45,46 +68,50 @@ export default function WardrobePage() {
             setIsLoading(false);
         };
 
-        // Note: Adding a real-time subscription is often better for a Wardrobe page
-        // const subscription = supabase
-        //     .from("personal-wardrobe")
-        //     .on("POSTGRES_CHANGES", {
-        //         event: "*",
-        //         schema: "public",
-        //         table: "personal-wardrobe"
-        //     }, () => {
-        //         fetchWardrobe();
-        //     })
-        //     .subscribe();
-
         fetchWardrobe();
-        console.log("Fetching wardrobe...");
-        console.log("Table: personal-wardrobe");
-
-        // return () => {
-        //     // supabase.removeSubscription(subscription);
-        // };
     }, []);
 
-    const toggleFavorite = async (id: number, currentFavorited: boolean | undefined) => {
-        const newFavorited = !currentFavorited;
-        console.log("Toggling id:", id, "from", currentFavorited, "to", newFavorited);
 
-        const { error } = await supabase
-            .from("personal-wardrobe")
-            .update({ favorited: newFavorited })
-            .eq("id", id)
-            .select();
+    // ⭐ FETCH & RECOLOR SVGs AFTER LOADING ITEMS
+    useEffect(() => {
+        items.forEach(async (item) => {
+            if (!item.image_url?.endsWith(".svg")) return;
 
-        if (error) {
-            console.error("Supabase update failed:", error.message);
-        } else {
-            // Optimistically update the local state
-            setItems(prev =>
-                prev.map(i => i.id === id ? { ...i, favorited: newFavorited } : i)
-            );
-        }
-    };
+            try {
+                const res = await fetch(item.image_url);
+                let svg = await res.text();
+
+                if (item.color) {
+                    // Replace all fill attributes with user color
+                    svg = svg.replace(/fill="[^"]*"/g, `fill="${item.color}"`);
+                }
+
+                setSvgMap(prev => ({ ...prev, [item.id]: svg }));
+            } catch (error) {
+                console.error("Error loading SVG:", error);
+            }
+        });
+    }, [items]);
+
+    // const toggleFavorite = async (id: number, currentFavorited: boolean | undefined) => {
+    //     const newFavorited = !currentFavorited;
+    //     console.log("Toggling id:", id, "from", currentFavorited, "to", newFavorited);
+    //
+    //     const { error } = await supabase
+    //         .from("personal-wardrobe")
+    //         .update({ favorited: newFavorited })
+    //         .eq("id", id)
+    //         .select();
+    //
+    //     if (error) {
+    //         console.error("Supabase update failed:", error.message);
+    //     } else {
+    //         // Optimistically update the local state
+    //         setItems(prev =>
+    //             prev.map(i => i.id === id ? { ...i, favorited: newFavorited } : i)
+    //         );
+    //     }
+    // };
 
     const removeItem = async (id: number) => {
         const { error } = await supabase
@@ -158,11 +185,20 @@ export default function WardrobePage() {
                                                 </div>
                                             ) : (
                                                 <div key={slot.id} className="wardrobe-card">
-                                                    <img
-                                                        src={slot.image_url || "/placeholder.png"}
-                                                        alt={slot.clothing_type}
-                                                        className="wardrobe-image"
-                                                    />
+                                                    {slot.image_url?.endsWith(".svg") ? (
+                                                        <div
+                                                            className="wardrobe-image"
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: svgMap[slot.id] || "",
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <img
+                                                            src={slot.image_url || "/placeholder.png"}
+                                                            alt={slot.clothing_type}
+                                                            className="wardrobe-image"
+                                                        />
+                                                    )}
 
                                                     <div className="wardrobe-name">{slot.clothing_type}</div>
 
@@ -181,15 +217,6 @@ export default function WardrobePage() {
                                                             Remove
                                                         </button>
 
-                                                        <button
-                                                            className={`btn fav ${slot.favorited ? "on" : ""}`}
-                                                            onClick={() => {
-                                                                console.log("Updating id:", slot.id);
-                                                                toggleFavorite(slot.id, slot.favorited);
-                                                            }}
-                                                        >
-                                                            ★
-                                                        </button>
                                                     </div>
                                                 </div>
                                             )
