@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Sidebar from "../components/NavBar/NavBar";
 import "./EditPage.css";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
 
 interface StoredItem {
     "clothing-type": string;
@@ -14,48 +15,51 @@ interface StoredItem {
     url: string;
 }
 
-/**
- * Asynchronously retrieves the current user's UUID from the Supabase session.
- * @returns The user's UUID (string) or null if no session/user is found.
- */
-const getCurrentUserUUID = async (): Promise<string | null> => {
-    try {
-        const { data: { session } } = await supabase.auth.getSession();
-        return session?.user?.id || null;
-    } catch (error) {
-        console.error("Error fetching Supabase session:", error);
-        return null;
-    }
-};
+interface PersonalWardrobeItem {
+    id: number;
+    clothing_type: string;
+    type: string;
+    high: number;
+    low: number;
+    color: string;
+    weather_con: string;
+    image_url: string;
+    favorited: boolean;
+}
 
-export default function EditPage() {
+
+export default function UpdatePage() {
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const itemId = id ? parseInt(id, 10) : null;
+
 
     const [clothingCategory, setClothingCategory] = useState("");
     const [type, setType] = useState("");
     const [weather, setWeather] = useState("");
-    const [temperature, setTemperature] = useState("");
+    const [temperature, setTemperature] = useState<"high" | "low" | "">("");
     const [color, setColor] = useState("#a8b0ff");
     const [favorited, setFavorited] = useState(false);
+
     const [storedItemsList, setStoredItemsList] = useState<StoredItem[]>([]);
     const [categoriesList, setCategoriesList] = useState<string[]>([]);
     const [typesList, setTypesList] = useState<string[]>([]);
     const [weatherList, setWeatherList] = useState<string[]>([]);
+
     const [imageUrl, setImageUrl] = useState<string>("");
     const [svgContent, setSvgContent] = useState("");
-    const [userId, setUserId] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isDataLoading, setIsDataLoading] = useState(true);
+    const [itemLoadError, setItemLoadError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchInitialData = async () => {
-            setIsLoading(true);
-            const authUUID = await getCurrentUserUUID();
-
-            if (authUUID) {
-                setUserId(authUUID);
-            } else {
-                console.warn("User not logged in or UUID not found. Personal saving disabled.");
+            if (itemId === null || isNaN(itemId)) {
+                setItemLoadError("Invalid item ID provided.");
+                setIsDataLoading(false);
+                return;
             }
+
+            setIsDataLoading(true);
 
             const { data: storedData, error: storedError } = await supabase
                 .from("stored-clothes")
@@ -63,15 +67,15 @@ export default function EditPage() {
 
             if (storedError) {
                 console.error("Error fetching stored clothes:", storedError);
-            } else {
-                setStoredItemsList(storedData || []);
-
-                const uniqueCategories = [...new Set(storedData.map((item) => item.clothing_category))]
-                    .filter(cat => cat && cat.trim() !== "");
-
-                setCategoriesList(uniqueCategories);
+                setItemLoadError("Failed to load required wardrobe data.");
+                setIsDataLoading(false);
+                return;
             }
 
+            setStoredItemsList(storedData || []);
+            const uniqueCategories = [...new Set(storedData.map((item) => item.clothing_category))]
+                .filter(cat => cat && cat.trim() !== "");
+            setCategoriesList(uniqueCategories);
             const { data: wardrobeData, error: wardrobeError } = await supabase
                 .from("general-wardrobe")
                 .select("weather_con");
@@ -83,16 +87,46 @@ export default function EditPage() {
                 setWeatherList(weathers);
             }
 
-            setIsLoading(false);
+            const { data: itemData, error: itemError } = await supabase
+                .from("personal-wardrobe")
+                .select("*")
+                .eq("id", itemId)
+                .single();
+
+            if (itemError || !itemData) {
+                console.error("Error fetching personal wardrobe item:", itemError?.message);
+                setItemLoadError(`Item ID ${itemId} not found or failed to load.`);
+                setIsDataLoading(false);
+                return;
+            }
+
+            const item = itemData as PersonalWardrobeItem;
+
+            setClothingCategory(item.type.toLowerCase());
+
+            setType(item.clothing_type);
+
+            setWeather(item.weather_con);
+            setColor(item.color);
+            setFavorited(item.favorited);
+
+            if (item.high === 1) {
+                setTemperature("high");
+            } else if (item.low === 1) {
+                setTemperature("low");
+            } else {
+                setTemperature("");
+            }
+
+            setIsDataLoading(false);
         };
 
         fetchInitialData();
-    }, []);
+    }, [itemId]);
 
     useEffect(() => {
         if (!clothingCategory) {
             setTypesList([]);
-            setType("");
             return;
         }
 
@@ -104,7 +138,6 @@ export default function EditPage() {
             .filter(type => type && type.trim() !== "");
 
         setTypesList(distinctTypes);
-        setType("");
     }, [clothingCategory, storedItemsList]);
 
     useEffect(() => {
@@ -142,11 +175,13 @@ export default function EditPage() {
         fetchImage();
     }, [type, storedItemsList]);
 
-    const handleSave = async () => {
-        if (!userId) {
-            alert("Error: User not authenticated. Cannot save item.");
+
+    const handleUpdate = async () => {
+        if (itemId === null) {
+            alert("Error: Cannot update, item ID is missing.");
             return;
         }
+
         if (!clothingCategory || !type || !weather || !temperature || !color) {
             alert("Please fill out all required fields (Category, Type, Temperature, Weather, and Color).");
             return;
@@ -164,38 +199,50 @@ export default function EditPage() {
         const isHigh = temperature === "high" ? 1 : 0;
         const isLow = temperature === "low" ? 1 : 0;
 
-        const newClothingItem = {
+        const updatedClothingItem = {
             clothing_type: type,
             high: isHigh,
             low: isLow,
             color: color,
             weather_con: weather,
             image_url: imageUrl,
-            user_id: userId,
             favorited: favorited,
             type: generalWardrobeType,
         };
 
         const { error } = await supabase
             .from("personal-wardrobe")
-            .insert([newClothingItem]);
+            .update(updatedClothingItem)
+            .eq("id", itemId);
 
         if (error) {
-            console.error("Error saving item to personal-wardrobe:", error);
-            alert(`Failed to save item: ${error.message}`);
+            console.error("Error updating item in personal-wardrobe:", error);
+            alert(`Failed to update item: ${error.message}`);
         } else {
-            alert("Clothing item saved successfully!");
+            alert("Clothing item updated successfully!");
             navigate("/wardrobe");
         }
     };
 
 
-    if (isLoading) {
+    if (isDataLoading) {
         return (
             <div className="homepage-container">
                 <Sidebar/>
                 <div className="editpage-container">
-                    <h2 className="editpage-title">Loading Wardrobe Data...</h2>
+                    <h2 className="editpage-title">Loading Item Details...</h2>
+                </div>
+            </div>
+        );
+    }
+
+    if (itemLoadError) {
+        return (
+            <div className="homepage-container">
+                <Sidebar/>
+                <div className="editpage-container">
+                    <h2 className="editpage-title text-red-500">Error Loading Item</h2>
+                    <p className="text-gray-600">{itemLoadError}</p>
                 </div>
             </div>
         );
@@ -207,7 +254,8 @@ export default function EditPage() {
             <div className="editpage-container">
                 <div className="editpage-main">
                     <div className="form-section">
-                        <h2 className="editpage-title">Add Clothing</h2>
+                        <h2 className="editpage-title">Edit Existing Item ({type})</h2>
+
                         <select
                             className="dropdown"
                             value={clothingCategory}
@@ -261,6 +309,7 @@ export default function EditPage() {
                                 />
                             </label>
                         </div>
+
                         <label className="favorited-checkbox">
                             <input
                                 type="checkbox"
@@ -285,14 +334,11 @@ export default function EditPage() {
 
                         <div className="button-group">
                             <div className="button-row">
-                                <button className="btn-save" onClick={handleSave}>
-                                    Save To Wardrobe
+                                <button className="btn-save" onClick={handleUpdate}>
+                                    Save Changes
                                 </button>
                             </div>
-                            <button
-                                className="btn-cancel"
-                                onClick={() => navigate("/wardrobe")}
-                            >
+                            <button className="btn-cancel" onClick={() => navigate("/wardrobe")}>
                                 Cancel
                             </button>
                         </div>
