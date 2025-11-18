@@ -23,7 +23,7 @@ export default function WardrobePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error] = useState<string | null>(null);
 
-    // ⭐ THIS MUST BE INSIDE THE COMPONENT
+
     const [svgMap, setSvgMap] = useState<Record<number, string>>({});
 
     const handleUnitChange = (u: "metric" | "imperial") => setUnits(u);
@@ -32,7 +32,7 @@ export default function WardrobePage() {
         if (next) setLocationName(next);
     };
 
-    // ⭐ FETCH WARDROBE ITEMS
+    // Fetch wardrobe
     useEffect(() => {
         const fetchWardrobe = async () => {
             setIsLoading(true);
@@ -76,28 +76,28 @@ export default function WardrobePage() {
     }, [items]);
 
     // ⭐ FIXED FAVORITE TOGGLE
-    const toggleFavorite = async (id: number) => {
-        const item = items.find(i => i.id === id);
-        if (!item) return;
-
-        const newFavorited = !item.favorited;
-
-        const { error } = await supabase
-            .from("personal-wardrobe")
-            .update({ favorited: newFavorited })
-            .eq("id", id);
-
-        if (error) {
-            console.error("Supabase update failed:", error.message);
-            return;
-        }
-
-        setItems(prev =>
-            prev.map(i =>
-                i.id === id ? { ...i, favorited: newFavorited } : i
-            )
-        );
-    };
+    // const toggleFavorite = async (id: number) => {
+    //     const item = items.find(i => i.id === id);
+    //     if (!item) return;
+    //
+    //     const newFavorited = !item.favorited;
+    //
+    //     const { error } = await supabase
+    //         .from("personal-wardrobe")
+    //         .update({ favorited: newFavorited })
+    //         .eq("id", id);
+    //
+    //     if (error) {
+    //         console.error("Supabase update failed:", error.message);
+    //         return;
+    //     }
+    //
+    //     setItems(prev =>
+    //         prev.map(i =>
+    //             i.id === id ? { ...i, favorited: newFavorited } : i
+    //         )
+    //     );
+    // };
 
     // ⭐ REMOVE ITEM
     const removeItem = async (id: number) => {
@@ -195,14 +195,14 @@ export default function WardrobePage() {
                                                             Remove
                                                         </button>
 
-                                                        <button
-                                                            className={`btn fav ${
-                                                                slot.favorited ? "on" : ""
-                                                            }`}
-                                                            onClick={() => toggleFavorite(slot.id)}
-                                                        >
-                                                            ★
-                                                        </button>
+                                                        {/*<button*/}
+                                                        {/*    className={`btn fav ${*/}
+                                                        {/*        slot.favorited ? "on" : ""*/}
+                                                        {/*    }`}*/}
+                                                        {/*    onClick={() => toggleFavorite(slot.id)}*/}
+                                                        {/*>*/}
+                                                        {/*    ★*/}
+                                                        {/*</button>*/}
                                                     </div>
                                                 </div>
                                             )
