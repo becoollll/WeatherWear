@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Sidebar from "../components/NavBar/NavBar";
 import "./EditPage.css";
+import { useNavigate } from "react-router-dom";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Define the structure for stored-clothes items
 interface StoredItem {
-    "clothing-type": string; // e.g., 'hoodie' (specific item)
-    clothing_category: string; // e.g., 'top' (general category)
+    "clothing-type": string;
+    clothing_category: string;
     url: string;
 }
 
@@ -29,40 +29,34 @@ const getCurrentUserUUID = async (): Promise<string | null> => {
 };
 
 export default function EditPage() {
-    // States for user selection and saving
+    const navigate = useNavigate();
+
     const [clothingCategory, setClothingCategory] = useState("");
     const [type, setType] = useState("");
     const [weather, setWeather] = useState("");
     const [temperature, setTemperature] = useState("");
     const [color, setColor] = useState("#a8b0ff");
-    const [favorited, setFavorited] = useState(false); // RESTORED FAVORITE STATE
-
-    // Data lists
+    const [favorited, setFavorited] = useState(false);
     const [storedItemsList, setStoredItemsList] = useState<StoredItem[]>([]);
     const [categoriesList, setCategoriesList] = useState<string[]>([]);
     const [typesList, setTypesList] = useState<string[]>([]);
     const [weatherList, setWeatherList] = useState<string[]>([]);
-
-    // Image/Preview states
     const [imageUrl, setImageUrl] = useState<string>("");
     const [svgContent, setSvgContent] = useState("");
-    const [userId, setUserId] = useState<string | null>(null); // ADDED USER ID STATE
+    const [userId, setUserId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // 1. Initial Data Fetch: stored-clothes data, weather conditions, and User ID
     useEffect(() => {
         const fetchInitialData = async () => {
             setIsLoading(true);
             const authUUID = await getCurrentUserUUID();
 
             if (authUUID) {
-                // Fetch User ID from profiles table or just use the authUUID directly
                 setUserId(authUUID);
             } else {
                 console.warn("User not logged in or UUID not found. Personal saving disabled.");
             }
 
-            // Fetch ALL data from stored-clothes
             const { data: storedData, error: storedError } = await supabase
                 .from("stored-clothes")
                 .select('"clothing-type", clothing_category, url');
@@ -72,14 +66,12 @@ export default function EditPage() {
             } else {
                 setStoredItemsList(storedData || []);
 
-                // Derive the unique list of categories for the first dropdown
                 const uniqueCategories = [...new Set(storedData.map((item) => item.clothing_category))]
                     .filter(cat => cat && cat.trim() !== "");
 
                 setCategoriesList(uniqueCategories);
             }
 
-            // Fetch distinct weather condition list from general-wardrobe
             const { data: wardrobeData, error: wardrobeError } = await supabase
                 .from("general-wardrobe")
                 .select("weather_con");
@@ -97,7 +89,6 @@ export default function EditPage() {
         fetchInitialData();
     }, []);
 
-    // 2. Cascading Dropdown Logic: Filter specific clothing types based on category selection
     useEffect(() => {
         if (!clothingCategory) {
             setTypesList([]);
@@ -116,8 +107,6 @@ export default function EditPage() {
         setType("");
     }, [clothingCategory, storedItemsList]);
 
-
-    // 3. Fetch Image based on selected item (type)
     useEffect(() => {
         const fetchImage = async () => {
             if (!type) {
@@ -153,20 +142,16 @@ export default function EditPage() {
         fetchImage();
     }, [type, storedItemsList]);
 
-
-    // 4. Save Logic: Insert item into personal-wardrobe
-    const handleSave = async (saveType: 'only' | 'add_more') => {
+    const handleSave = async () => {
         if (!userId) {
             alert("Error: User not authenticated. Cannot save item.");
             return;
         }
-
         if (!clothingCategory || !type || !weather || !temperature || !color) {
             alert("Please fill out all required fields (Category, Type, Temperature, Weather, and Color).");
             return;
         }
 
-        // Derive the general type (e.g., 'top' -> 'Top') for the 'type' column in personal-wardrobe
         const generalWardrobeType = clothingCategory
             ? clothingCategory.charAt(0).toLowerCase() + clothingCategory.slice(1)
             : null;
@@ -176,20 +161,19 @@ export default function EditPage() {
             return;
         }
 
-        // Determine high/low boolean based on temperature selection
-        const isHigh = temperature === "high" ? 1 : 0; // Assuming bigint/number expects 1 or 0
-        const isLow = temperature === "low" ? 1 : 0;   // Assuming bigint/number expects 1 or 0
+        const isHigh = temperature === "high" ? 1 : 0;
+        const isLow = temperature === "low" ? 1 : 0;
 
         const newClothingItem = {
-            clothing_type: type,        // The specific item name (e.g., 'hoodie')
+            clothing_type: type,
             high: isHigh,
             low: isLow,
             color: color,
-            weather_con: weather,       // e.g., 'Sunny'
-            image_url: imageUrl,        // URL of the clothing image
-            user_id: userId,            // Foreign key
-            favorited: favorited,       // Boolean state
-            type: generalWardrobeType,  // General type (e.g., 'Top')
+            weather_con: weather,
+            image_url: imageUrl,
+            user_id: userId,
+            favorited: favorited,
+            type: generalWardrobeType,
         };
 
         const { error } = await supabase
@@ -201,18 +185,7 @@ export default function EditPage() {
             alert(`Failed to save item: ${error.message}`);
         } else {
             alert("Clothing item saved successfully!");
-
-            if (saveType === 'add_more') {
-                // Reset form fields to add another item
-                setClothingCategory("");
-                setType("");
-                setWeather("");
-                setTemperature("");
-                setColor("#a8b0ff");
-                setFavorited(false);
-                setImageUrl("");
-                setSvgContent("");
-            }
+            navigate("/wardrobe");
         }
     };
 
@@ -234,9 +207,7 @@ export default function EditPage() {
             <div className="editpage-container">
                 <div className="editpage-main">
                     <div className="form-section">
-                        <h2 className="editpage-title">Edit Clothing</h2>
-
-                        {/* DROPDOWN 1: Clothing Category (e.g., 'top', 'other') */}
+                        <h2 className="editpage-title">Add Clothing</h2>
                         <select
                             className="dropdown"
                             value={clothingCategory}
@@ -251,8 +222,6 @@ export default function EditPage() {
                                 </option>
                             ))}
                         </select>
-
-                        {/* DROPDOWN 2: Clothing Type (specific item, e.g., 'hoodie') */}
                         <select
                             className="dropdown"
                             value={type}
@@ -292,8 +261,6 @@ export default function EditPage() {
                                 />
                             </label>
                         </div>
-
-                        {/* RESTORED FAVORITE CHECKBOX */}
                         <label className="favorited-checkbox">
                             <input
                                 type="checkbox"
@@ -318,15 +285,16 @@ export default function EditPage() {
 
                         <div className="button-group">
                             <div className="button-row">
-                                {/* UPDATED TO CALL handleSave with 'only' */}
-                                <button className="btn-save" onClick={() => handleSave('only')}>
+                                <button className="btn-save" onClick={handleSave}>
                                     Save To Wardrobe
                                 </button>
-                                {/*<button className="btn-addmore" onClick={() => handleSave('add_more')}>*/}
-                                {/*    Add More*/}
-                                {/*</button>*/}
                             </div>
-                            <button className="btn-cancel">Cancel</button>
+                            <button
+                                className="btn-cancel"
+                                onClick={() => navigate("/wardrobe")}
+                            >
+                                Cancel
+                            </button>
                         </div>
                     </div>
 

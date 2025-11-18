@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import HomePage from './pages/HomePage';
 import WardrobePage from "./pages/WardrobePage";
 import EditPage from "./pages/EditPage";
-import UpdatePage from "./pages/UpdatePage"; // <-- 1. Import the new UpdatePage
+import UpdatePage from "./pages/UpdatePage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import './App.css';
@@ -18,12 +18,10 @@ function App() {
                     <ProtectedRoute><WardrobePage /></ProtectedRoute>
                 } />
 
-                {/* Route for adding a NEW item (no ID parameter) */}
                 <Route path="/edit" element={
                     <ProtectedRoute><EditPage /></ProtectedRoute>
                 } />
 
-                {/* Route for EDITING an existing item (requires ID parameter) */}
                 <Route path="/edit/:id" element={
                     <ProtectedRoute><UpdatePage /></ProtectedRoute>
                 } />

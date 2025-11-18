@@ -1,27 +1,26 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Sidebar from "../components/NavBar/NavBar";
-import "./EditPage.css"; // Reuse existing styles
-import { useParams, useNavigate } from "react-router-dom"; // Import routing hooks
+import "./EditPage.css";
+import { useParams, useNavigate } from "react-router-dom";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Data structures from the previous EditPage
+
 interface StoredItem {
     "clothing-type": string;
     clothing_category: string;
     url: string;
 }
 
-// Full structure of an item in personal-wardrobe
 interface PersonalWardrobeItem {
     id: number;
     clothing_type: string;
-    type: string; // The general category, e.g., 'Top'
-    high: number; // 1 or 0
-    low: number;  // 1 or 0
+    type: string;
+    high: number;
+    low: number;
     color: string;
     weather_con: string;
     image_url: string;
@@ -30,32 +29,28 @@ interface PersonalWardrobeItem {
 
 
 export default function UpdatePage() {
-    // Get the item ID from the URL path. Assumes route is '/edit/:id' or similar.
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const itemId = id ? parseInt(id, 10) : null;
 
-    // States for form fields
-    const [clothingCategory, setClothingCategory] = useState(""); // First dropdown value (e.g., 'top')
-    const [type, setType] = useState("");                       // Second dropdown value (e.g., 'jacket coat')
+
+    const [clothingCategory, setClothingCategory] = useState("");
+    const [type, setType] = useState("");
     const [weather, setWeather] = useState("");
     const [temperature, setTemperature] = useState<"high" | "low" | "">("");
     const [color, setColor] = useState("#a8b0ff");
     const [favorited, setFavorited] = useState(false);
 
-    // Data lists
     const [storedItemsList, setStoredItemsList] = useState<StoredItem[]>([]);
     const [categoriesList, setCategoriesList] = useState<string[]>([]);
     const [typesList, setTypesList] = useState<string[]>([]);
     const [weatherList, setWeatherList] = useState<string[]>([]);
 
-    // UI/Loading states
     const [imageUrl, setImageUrl] = useState<string>("");
     const [svgContent, setSvgContent] = useState("");
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [itemLoadError, setItemLoadError] = useState<string | null>(null);
 
-    // --- 1. Initial Data Fetch (Dropdowns + Item Data) ---
     useEffect(() => {
         const fetchInitialData = async () => {
             if (itemId === null || isNaN(itemId)) {
@@ -66,7 +61,6 @@ export default function UpdatePage() {
 
             setIsDataLoading(true);
 
-            // A. Fetch ALL data from stored-clothes (required for cascading dropdowns)
             const { data: storedData, error: storedError } = await supabase
                 .from("stored-clothes")
                 .select('"clothing-type", clothing_category, url');
@@ -82,8 +76,6 @@ export default function UpdatePage() {
             const uniqueCategories = [...new Set(storedData.map((item) => item.clothing_category))]
                 .filter(cat => cat && cat.trim() !== "");
             setCategoriesList(uniqueCategories);
-
-            // B. Fetch distinct weather condition list
             const { data: wardrobeData, error: wardrobeError } = await supabase
                 .from("general-wardrobe")
                 .select("weather_con");
@@ -95,7 +87,6 @@ export default function UpdatePage() {
                 setWeatherList(weathers);
             }
 
-            // C. Fetch the specific item data from personal-wardrobe
             const { data: itemData, error: itemError } = await supabase
                 .from("personal-wardrobe")
                 .select("*")
@@ -109,20 +100,16 @@ export default function UpdatePage() {
                 return;
             }
 
-            // D. Populate form states with fetched item data
             const item = itemData as PersonalWardrobeItem;
 
-            // Set first dropdown value (e.g., 'Top' from DB -> 'top' for state)
             setClothingCategory(item.type.toLowerCase());
 
-            // Set second dropdown value (e.g., 'hoodie')
             setType(item.clothing_type);
 
             setWeather(item.weather_con);
             setColor(item.color);
             setFavorited(item.favorited);
 
-            // Convert high/low bigint (1/0) to temperature string state
             if (item.high === 1) {
                 setTemperature("high");
             } else if (item.low === 1) {
@@ -137,7 +124,6 @@ export default function UpdatePage() {
         fetchInitialData();
     }, [itemId]);
 
-    // --- 2. Cascading Dropdown Logic: Filter specific clothing types based on category selection ---
     useEffect(() => {
         if (!clothingCategory) {
             setTypesList([]);
@@ -154,8 +140,6 @@ export default function UpdatePage() {
         setTypesList(distinctTypes);
     }, [clothingCategory, storedItemsList]);
 
-
-    // --- 3. Fetch Image based on selected item (type) ---
     useEffect(() => {
         const fetchImage = async () => {
             if (!type) {
@@ -192,7 +176,6 @@ export default function UpdatePage() {
     }, [type, storedItemsList]);
 
 
-    // --- 4. Save Logic: UPDATE item in personal-wardrobe ---
     const handleUpdate = async () => {
         if (itemId === null) {
             alert("Error: Cannot update, item ID is missing.");
@@ -205,7 +188,7 @@ export default function UpdatePage() {
         }
 
         const generalWardrobeType = clothingCategory
-            ? clothingCategory.charAt(0).toUpperCase() + clothingCategory.slice(1)
+            ? clothingCategory.charAt(0).toLowerCase() + clothingCategory.slice(1)
             : null;
 
         if (!generalWardrobeType) {
@@ -213,7 +196,6 @@ export default function UpdatePage() {
             return;
         }
 
-        // Determine high/low boolean based on temperature selection (1 or 0 for bigint)
         const isHigh = temperature === "high" ? 1 : 0;
         const isLow = temperature === "low" ? 1 : 0;
 
@@ -223,22 +205,21 @@ export default function UpdatePage() {
             low: isLow,
             color: color,
             weather_con: weather,
-            image_url: imageUrl,        // Use the current image_url state
+            image_url: imageUrl,
             favorited: favorited,
             type: generalWardrobeType,
         };
 
         const { error } = await supabase
             .from("personal-wardrobe")
-            .update(updatedClothingItem) // Use .update()
-            .eq("id", itemId);           // Target the specific row by ID
+            .update(updatedClothingItem)
+            .eq("id", itemId);
 
         if (error) {
             console.error("Error updating item in personal-wardrobe:", error);
             alert(`Failed to update item: ${error.message}`);
         } else {
             alert("Clothing item updated successfully!");
-            // Navigate back to the wardrobe page after a successful update
             navigate("/wardrobe");
         }
     };
@@ -273,10 +254,8 @@ export default function UpdatePage() {
             <div className="editpage-container">
                 <div className="editpage-main">
                     <div className="form-section">
-                        {/* Use a clear title for the update page */}
-                        <h2 className="editpage-title">Edit Existing Item (ID: {itemId})</h2>
+                        <h2 className="editpage-title">Edit Existing Item ({type})</h2>
 
-                        {/* DROPDOWN 1: Clothing Category (e.g., 'top') */}
                         <select
                             className="dropdown"
                             value={clothingCategory}
@@ -291,8 +270,6 @@ export default function UpdatePage() {
                                 </option>
                             ))}
                         </select>
-
-                        {/* DROPDOWN 2: Clothing Type (specific item, e.g., 'hoodie') */}
                         <select
                             className="dropdown"
                             value={type}
@@ -357,19 +334,16 @@ export default function UpdatePage() {
 
                         <div className="button-group">
                             <div className="button-row">
-                                {/* Renamed button to clearly indicate Update */}
                                 <button className="btn-save" onClick={handleUpdate}>
                                     Save Changes
                                 </button>
                             </div>
-                            {/* Cancel button navigates back to wardrobe */}
                             <button className="btn-cancel" onClick={() => navigate("/wardrobe")}>
                                 Cancel
                             </button>
                         </div>
                     </div>
 
-                    {/* Preview Section remains the same */}
                     <div className="preview-section">
                         <div className="preview-wrapper">
                             {imageUrl ? (

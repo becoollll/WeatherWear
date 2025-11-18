@@ -18,19 +18,15 @@ export default function WardrobePage() {
 
     const [items, setItems] = useState<WardrobeItem[]>([]);
     const [units, setUnits] = useState<"metric" | "imperial">("imperial");
-
     const [locationName, setLocationName] = useState<string>("Alexandria, VA");
     const [isLoading, setIsLoading] = useState(false);
     const [error] = useState<string | null>(null);
-
-    // TopBar Handlers
     const handleUnitChange = (u: "metric" | "imperial") => setUnits(u);
     const handleSearch = (q: string) => {
         const next = q.trim();
         if (next) setLocationName(next);
     };
 
-    // Fetch wardrobe items from Supabase
     useEffect(() => {
         const fetchWardrobe = async () => {
             setIsLoading(true);
@@ -70,16 +66,13 @@ export default function WardrobePage() {
         // };
     }, []);
 
-
-    // Wardrobe actions
-    // FIX: Requires passing the current favorited state to correctly toggle the database value.
     const toggleFavorite = async (id: number, currentFavorited: boolean | undefined) => {
         const newFavorited = !currentFavorited;
         console.log("Toggling id:", id, "from", currentFavorited, "to", newFavorited);
 
         const { error } = await supabase
             .from("personal-wardrobe")
-            .update({ favorited: newFavorited }) // Updated to use the calculated boolean
+            .update({ favorited: newFavorited })
             .eq("id", id)
             .select();
 
@@ -93,7 +86,6 @@ export default function WardrobePage() {
         }
     };
 
-    // Removes from database (needs to add confirmation)
     const removeItem = async (id: number) => {
         const { error } = await supabase
             .from("personal-wardrobe")
@@ -105,13 +97,14 @@ export default function WardrobePage() {
         }
     };
 
-    // CONNECTION TO UPDATE PAGE: Dedicated function for clarity
     const handleEdit = (id: number) => {
-        // Navigates to the route expected by the new UpdatePage component
         navigate(`/edit/${id}`);
     }
 
-    // CATEGORY CONFIG
+    const handleAddItem = () => {
+        navigate(`/edit`);
+    }
+
     const categories = useMemo(
         () =>
             [
@@ -141,7 +134,6 @@ export default function WardrobePage() {
                         {categories.map(cat => {
                             const catItems = items.filter(i => i.type.toLowerCase() === cat.type); // ensure case matching
 
-                            // ensure at least 4 slots so the user always sees + buttons
                             const minSlots = 4;
                             const slots: (WardrobeItem | { id: number; empty: true })[] =
                                 catItems.length > 0 ? [...catItems] : [];
@@ -157,7 +149,11 @@ export default function WardrobePage() {
                                     <div className="wardrobe-grid">
                                         {slots.map(slot =>
                                             "empty" in slot ? (
-                                                <div key={slot.id} className="wardrobe-card empty">
+                                                <div
+                                                    key={slot.id}
+                                                    className="wardrobe-card empty"
+                                                    onClick={handleAddItem}
+                                                >
                                                     <div className="wardrobe-plus">+</div>
                                                 </div>
                                             ) : (
@@ -173,7 +169,6 @@ export default function WardrobePage() {
                                                     <div className="wardrobe-actions">
                                                         <button
                                                             className="btn edit"
-                                                            // Use the new handleEdit function for clarity
                                                             onClick={() => handleEdit(slot.id)}
                                                         >
                                                             Edit
@@ -188,7 +183,6 @@ export default function WardrobePage() {
 
                                                         <button
                                                             className={`btn fav ${slot.favorited ? "on" : ""}`}
-                                                            // Pass the current favorited state for correct toggling
                                                             onClick={() => {
                                                                 console.log("Updating id:", slot.id);
                                                                 toggleFavorite(slot.id, slot.favorited);
