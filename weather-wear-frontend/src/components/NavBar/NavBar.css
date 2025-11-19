@@ -1,88 +1,90 @@
 .sidebar-container {
-    width: 50px;
-    height: 110vh;
+    height: 100vh;
     background-color: #6AD4DD;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    padding: 1rem;
+    padding: 1rem 0.5rem;
     flex-shrink: 0;
-    position: relative;
     color: #F8F6E3;
+    transition: width 0.3s ease;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.sidebar-container.closed {
+    width: 50px;
+}
+
+.sidebar-container.open {
+    width: 200px;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    height: 65px;
+}
+
+.sidebar-container.open .sidebar-header {
+    justify-content: flex-start;
+    padding-left: 12px;
 }
 
 .hamburger {
-    font-size: 2rem;
+    font-size: 1.5rem;
     cursor: pointer;
-    user-select: none;
-    transition: transform 0.2s ease-in-out;
     color: #F8F6E3;
+    transition: transform 0.2s;
 }
 
 .hamburger:hover {
     transform: scale(1.1);
 }
 
-.sidebar-dropdown {
-    position: absolute;
-    top: 60px;
-    left: 10px;
-    width: 160px;
-    background-color: #6AD4DD;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.3s ease;
-    z-index: 100;
-}
-
-.sidebar-dropdown.open {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-.sidebar-dropdown ul {
+.sidebar-menu {
     list-style: none;
+    padding: 0;
     margin: 0;
-    padding: 0.5rem 0;
+    width: 100%;
 }
 
-.sidebar-dropdown li {
-    padding: 10px 15px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background 0.2s;
-    color: white;
-}
-
-.sidebar-dropdown li:hover {
-    background-color: #7AA2E3;
-    border-radius: 6px;
-}
-.homepage-container {
+.menu-item {
     display: flex;
-    flex-direction: row;
-    height: 100vh;
-    width: 100vw;
-    background-color: #F8F6E3;
-    overflow: hidden;
-}
-
-.main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.content-body {
-    flex: 1;
-    display: flex;
-    justify-content: center;
     align-items: center;
-    overflow: auto;
-    padding: 2rem;
+    padding: 12px 10px;
+    cursor: pointer;
+    border-radius: 15px;
+    transition: background-color 0.2s;
+    margin-bottom: 5px;
+}
+
+.menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.menu-item.active {
+    background-color: #F8F6E3;
+    color: #7AA2E3;
+}
+
+.icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+}
+
+.label {
+    margin-left: 15px;
+    font-size: 1rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* show the text only when open */
+.sidebar-container.open .label {
+    opacity: 1;
 }
