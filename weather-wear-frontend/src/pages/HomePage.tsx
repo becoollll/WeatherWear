@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import TopBar from '../components/TopBar/TopBar.tsx';
+import TopBar from "../components/TopBar/TopBar.tsx";
+import WeatherControls from "../components/TopBar/WeatherControls.tsx";
 import WeatherSection from '../components/WeatherSection/WeatherSection.tsx';
 import Sidebar from '../components/NavBar/NavBar.tsx';
 import OutfitSection from '../components/OutfitSection/OutfitSection.tsx';
@@ -148,7 +149,8 @@ export default function HomePage() {
         <div className="homepage-container">
             <Sidebar />
             <div className="main-content">
-                <TopBar
+                <TopBar>
+                <WeatherControls
                     locationName={locationName}
                     error={error}
                     isLoading={isLoading}
@@ -156,6 +158,7 @@ export default function HomePage() {
                     onUnitChange={handleUnitChange}
                     onSearch={handleSearch}
                 />
+                </TopBar>
                 <div className="main-sections">
                     <WeatherSection weatherData={weatherData} isLoading={isLoading} units={units} />
                     <OutfitSection weatherData={weatherData} isLoading={isLoading} />
