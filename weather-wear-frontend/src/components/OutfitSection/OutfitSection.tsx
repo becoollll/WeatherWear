@@ -26,10 +26,10 @@ interface ClothingItem {
  * Normalize weather condition to consistent categories
  */
 function normalizeWeatherCondition(cond: string): string {
-    const c = cond.toLowerCase();
+    const c = cond.toUpperCase();
     if (["rain", "rainy", "drizzle", "thunderstorm"].some(k => c.includes(k))) return "rain";
     if (["snow", "snowy"].some(k => c.includes(k))) return "snow";
-    if (["cloud", "clouds"].some(k => c.includes(k))) return "clouds";
+    if (["cloud", "clouds", "overcast clouds"].some(k => c.includes(k))) return "clouds";
     if (["clear", "sun"].some(k => c.includes(k))) return "clear";
     return "all";
 }
@@ -114,9 +114,9 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         }
 
 
-        const topTypes = ["sweatshirt", "t-shirt", "polo", "tanktop", "buttonup", "hoodie"];
-        const bottomTypes = ["jeans", "sweatpants", "shorts"];
-        const accessoryTypes = ["rainjacket", "jacket", "wintercoat", "overalls", "jumpsuit"];
+        const topTypes = ["Sweatshirt", "T-shirt", "Polo", "Tanktop", "Buttonup", "Hoodie"];
+        const bottomTypes = ["Jeans", "Sweatpants", "Shorts"];
+        const accessoryTypes = ["Rainjacket", "Jacket", "Wintercoat", "Overalls", "Jumpsuit"];
 
         const tops = weatherFiltered.filter((i) => topTypes.includes(i.clothing_type));
         const bottoms = weatherFiltered.filter((i) => bottomTypes.includes(i.clothing_type));
