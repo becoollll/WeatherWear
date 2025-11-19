@@ -30,15 +30,7 @@ export default function WardrobePage() {
     const [svgMap, setSvgMap] = useState<Record<number, string>>({});
 
     const [items, setItems] = useState<WardrobeItem[]>([]);
-    const [units, setUnits] = useState<"metric" | "imperial">("imperial");
-    const [locationName, setLocationName] = useState<string>("Alexandria, VA");
-    const [isLoading, setIsLoading] = useState(false);
-    const [error] = useState<string | null>(null);
-    const handleUnitChange = (u: "metric" | "imperial") => setUnits(u);
-    const handleSearch = (q: string) => {
-        const next = q.trim();
-        if (next) setLocationName(next);
-    };
+    const [, setIsLoading] = useState(false);
 
     // Fetch Wardrobe
     useEffect(() => {
@@ -147,14 +139,7 @@ export default function WardrobePage() {
             <Sidebar />
 
             <div className="main-content">
-                <TopBar
-                    locationName={locationName}
-                    error={error}
-                    isLoading={isLoading}
-                    currentUnit={units}
-                    onUnitChange={handleUnitChange}
-                    onSearch={handleSearch}
-                />
+                <TopBar/>
 
                 <div className="main-sections">
                     <div className="wardrobe-page">

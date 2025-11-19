@@ -1,34 +1,43 @@
 import '../NavBar/NavBar.css';
-import { FaUser, FaHome, FaTshirt } from "react-icons/fa";
+import { FaUser, FaHome, FaTshirt, FaBars } from "react-icons/fa";
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Sidebar() {
-    const [open, setOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const toggleSidebar = () => {
+        setIsOpen(!isOpen);
+    };
+
+    const menuItems = [
+        { path: "/", label: "Home", icon: <FaHome size={20} /> },
+        { path: "/wardrobe", label: "Wardrobe", icon: <FaTshirt size={20} /> },
+        // { path: "/profile", label: "Profile", icon: <FaUser size={20} /> },
+    ];
 
     return (
-        <div className="sidebar-container">
-            <div className="hamburger" onClick={() => setOpen(!open)}>
-                ☰
+        <div className={`sidebar-container ${isOpen ? "open" : "closed"}`}>
+            <div className="sidebar-header">
+                <div className="hamburger" onClick={toggleSidebar}>
+                    <FaBars />
+                </div>
             </div>
 
-            <div className={`sidebar-dropdown ${open ? 'open' : ''}`}>
-                <ul>
-                    <li onClick={() => navigate("/")}>
-                        <FaHome size={15} color="white" />{" "} Home
+            <ul className="sidebar-menu">
+                {menuItems.map((item) => (
+                    <li 
+                        key={item.path} 
+                        className={`menu-item ${location.pathname === item.path ? "active" : ""}`}
+                        onClick={() => navigate(item.path)}
+                    >
+                        <span className="icon">{item.icon}</span>
+                        <span className="label">{item.label}</span>
                     </li>
-                    <li onClick={() => navigate("/profile")}>
-                        <FaUser size={15} color="white" />{" "} Profile
-                    </li>
-
-                    <Link to="/wardrobe" style={{ textDecoration: "none" }}>
-                        <li>
-                            <FaTshirt size={15} color="white" />{" "} Wardrobe
-                        </li>
-                    </Link>
-                </ul>
-            </div>
+                ))}
+            </ul>
         </div>
     );
 }
