@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import html2canvas from "html2canvas";
 import { supabase } from "../../supabaseClient";
 import "../OutfitSection/OutfitSection.css";
 import topPlaceholder from "../OutfitSection/Vector-6.png";
@@ -22,34 +23,28 @@ interface ClothingItem {
     image_url?: string;
 }
 
-/**
- * Normalize weather condition to consistent categories
- */
 function normalizeWeatherCondition(cond: string): string {
     const c = cond.toUpperCase();
-    if (["rain", "rainy", "drizzle", "thunderstorm"].some(k => c.includes(k))) return "rain";
-    if (["snow", "snowy"].some(k => c.includes(k))) return "snow";
-    if (["cloud", "clouds", "overcast clouds"].some(k => c.includes(k))) return "clouds";
+    if (["rain", "drizzle", "thunderstorm"].some(k => c.includes(k))) return "rain";
+    if (["snow"].some(k => c.includes(k))) return "snow";
+    if (["cloud", "clouds", "overcast"].some(k => c.includes(k))) return "clouds";
     if (["clear", "sun"].some(k => c.includes(k))) return "clear";
     return "all";
 }
 
 export default function OutfitSection({ weatherData, isLoading }: OutfitSectionProps) {
-    const [outfit, setOutfit] = useState<{
-        top: ClothingItem | null;
-        bottom: ClothingItem | null;
-        accessory: ClothingItem | null;
-    }>({
-        top: null,
-        bottom: null,
-        accessory: null,
+    const [outfit, setOutfit] = useState({
+        top: null as ClothingItem | null,
+        bottom: null as ClothingItem | null,
+        accessory: null as ClothingItem | null,
     });
+
+    const outfitCardRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (weatherData && !isLoading) {
             void fetchOutfit();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [weatherData, isLoading]);
 
     async function fetchOutfit() {
@@ -58,47 +53,18 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         const temp = Math.round(weatherData.current.main.feels_like);
         const condition = normalizeWeatherCondition(weatherData.current.weather[0].main);
 
-        console.log("🌤️ Normalized weather:", condition, "Temp:", temp);
+        const { data: allData } = await supabase.from("general-wardrobe").select("*");
 
-        const { data: allData, error: allError } = await supabase
-            .from("general-wardrobe")
-            .select("*");
-
-        console.log(" ALL DATA:", allData);
-        console.log(" ALL ERROR:", allError);
-
-        if (allError) {
-            console.error(" Supabase error:", allError);
-            return;
-        }
-
-
-        const { data: filteredData, error: filteredError } = await supabase
+        const { data: filteredData } = await supabase
             .from("general-wardrobe")
             .select("*")
             .lte("low", temp)
             .gte("high", temp);
 
-        console.log("🔍 FILTERED DATA:", filteredData);
-        console.log("🔍 Query was: low <= " + temp + " AND high >= " + temp);
-
-        if (filteredError) {
-            console.error(" Filter error:", filteredError);
-        }
-
-
-        const dataToUse = (filteredData && filteredData.length > 0) ? filteredData : allData;
-
-        if (!dataToUse || dataToUse.length === 0) {
-            console.warn("⚠ No clothing data found in database.");
-            setOutfit({ top: null, bottom: null, accessory: null });
-            return;
-        }
-
-        console.log(filteredData && filteredData.length > 0
-            ? "✅ Using filtered data"
-            : "⚠️ Using ALL data as fallback");
-
+        const dataToUse =
+            (filteredData && filteredData.length > 0)
+                ? filteredData
+                : (allData ?? []);
 
         const weatherFiltered = dataToUse.filter(
             (item: ClothingItem) =>
@@ -107,40 +73,99 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
                 item.weather_con.toLowerCase().includes(condition)
         );
 
-        if (weatherFiltered.length === 0) {
-            console.warn("⚠️ No matching clothing items for condition:", condition);
-            setOutfit({ top: null, bottom: null, accessory: null });
-            return;
-        }
-
-
         const topTypes = ["Sweatshirt", "T-shirt", "Polo", "Tanktop", "Buttonup", "Hoodie"];
         const bottomTypes = ["Jeans", "Sweatpants", "Shorts"];
         const accessoryTypes = ["Rainjacket", "Jacket", "Wintercoat", "Overalls", "Jumpsuit"];
 
-        const tops = weatherFiltered.filter((i) => topTypes.includes(i.clothing_type));
-        const bottoms = weatherFiltered.filter((i) => bottomTypes.includes(i.clothing_type));
-        const accessories = weatherFiltered.filter((i) => accessoryTypes.includes(i.clothing_type));
+        const picks = {
+            top: weatherFiltered.filter(i => topTypes.includes(i.clothing_type)),
+            bottom: weatherFiltered.filter(i => bottomTypes.includes(i.clothing_type)),
+            accessory: weatherFiltered.filter(i => accessoryTypes.includes(i.clothing_type)),
+        };
 
-        console.log(" Categorized:", {
-            tops: tops.length,
-            bottoms: bottoms.length,
-            accessories: accessories.length
-        });
-
-
-        const randomPick = (arr: ClothingItem[]) =>
-            arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null;
+        const random = (arr: ClothingItem[]) =>
+            arr.length ? arr[Math.floor(Math.random() * arr.length)] : null;
 
         setOutfit({
-            top: randomPick(tops),
-            bottom: randomPick(bottoms),
-            accessory: randomPick(accessories),
+            top: random(picks.top),
+            bottom: random(picks.bottom),
+            accessory: random(picks.accessory),
         });
     }
 
     const handleRefresh = () => {
         void fetchOutfit();
+    };
+
+    /** ⭐ Convert SVG → PNG base64 for html2canvas */
+    const svgToPng = async (svgUrl: string): Promise<string> => {
+        const svgText = await fetch(svgUrl).then(res => res.text());
+        const svgBlob = new Blob([svgText], { type: "image/svg+xml" });
+        const url = URL.createObjectURL(svgBlob);
+
+        return new Promise(res => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                const c = document.createElement("canvas");
+                c.width = img.width;
+                c.height = img.height;
+                const ctx = c.getContext("2d")!;
+                ctx.drawImage(img, 0, 0);
+                res(c.toDataURL("image/png"));
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+        });
+    };
+
+    /** ⭐ ensure all images load */
+    const waitForImages = (container: HTMLDivElement) => {
+        const imgs = container.querySelectorAll("img");
+        return Promise.all(
+            Array.from(imgs).map(
+                img =>
+                    new Promise<void>(resolve => {
+                        if (img.complete) resolve();
+                        img.onload = () => resolve();
+                        img.onerror = () => resolve();
+                    })
+            )
+        );
+    };
+
+    /** ⭐ Main Screenshot Function — supports SVG */
+    const handleDownloadImage = async () => {
+        if (!outfitCardRef.current) return;
+
+        await waitForImages(outfitCardRef.current);
+
+        const canvas = await html2canvas(outfitCardRef.current, {
+            scale: 2,
+            backgroundColor: "#ffffff",
+            useCORS: true,
+            allowTaint: true,
+
+            /** ⭐ Convert SVG inside cloned DOM */
+            onclone: async clonedDoc => {
+                const imgs = clonedDoc.querySelectorAll("img");
+
+                for (const img of Array.from(imgs)) {
+                    const src = (img as HTMLImageElement).src;
+
+                    if (src.endsWith(".svg")) {
+                        const png = await svgToPng(src);
+                        (img as HTMLImageElement).src = png;
+                    }
+                }
+            }
+        });
+
+        const data = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = data;
+        link.download = "outfit.png";
+        link.click();
     };
 
     if (isLoading) {
@@ -151,71 +176,45 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         <div className="outfit-section">
             <h2 className="outfit-title">Today's Outfit Recommendation</h2>
 
-            <div className="outfit-grid">
-                {/* Top */}
-                <div className="outfit-item">
-
-                    <div className="outfit-info">
+            <div ref={outfitCardRef} className="outfit-screenshot-card">
+                <div className="outfit-grid">
+                    <div className="outfit-item">
                         <h3>Top</h3>
-                        {outfit.top ? (
-                            <>
-                                <p>{outfit.top.clothing_type}</p>
-
-                            </>
-                        ) : (
-                            <p>No match</p>
-                        )}
+                        <p>{outfit.top?.clothing_type || "No match"}</p>
+                        <img
+                            src={outfit.top?.image_url || topPlaceholder}
+                            className="outfit-image"
+                        />
                     </div>
-                    <img
-                        src={outfit.top?.image_url || topPlaceholder}
-                        alt={outfit.top?.clothing_type || "Top recommendation"}
-                        className="outfit-image"
-                    />
-                </div>
 
-                {/* Bottom */}
-                <div className="outfit-item">
-                    <div className="outfit-info">
+                    <div className="outfit-item">
                         <h3>Bottom</h3>
-                        {outfit.bottom ? (
-                            <>
-                                <p>{outfit.bottom.clothing_type}</p>
-
-                            </>
-                        ) : (
-                            <p>No match</p>
-                        )}
+                        <p>{outfit.bottom?.clothing_type || "No match"}</p>
+                        <img
+                            src={outfit.bottom?.image_url || bottomPlaceholder}
+                            className="outfit-image"
+                        />
                     </div>
-                    <img
-                        src={outfit.bottom?.image_url || bottomPlaceholder}
-                        alt={outfit.bottom?.clothing_type || "Bottom recommendation"}
-                        className="outfit-image"
-                    />
-                </div>
 
-                {/* Accessories */}
-                <div className="outfit-item">
-                    <div className="outfit-info">
+                    <div className="outfit-item">
                         <h3>Accessories</h3>
-                        {outfit.accessory ? (
-                            <>
-                                <p>{outfit.accessory.clothing_type}</p>
-                            </>
-                        ) : (
-                            <p>No match</p>
-                        )}
+                        <p>{outfit.accessory?.clothing_type || "No match"}</p>
+                        <img
+                            src={outfit.accessory?.image_url || accessoryPlaceholder}
+                            className="outfit-image"
+                        />
                     </div>
-                    <img
-                        src={outfit.accessory?.image_url || accessoryPlaceholder}
-                        alt={outfit.accessory?.clothing_type || "Accessory recommendation"}
-                        className="outfit-image"
-                    />
                 </div>
             </div>
 
             <button className="refresh-button" onClick={handleRefresh}>
-                <img src={refreshIcon} alt="Refresh outfit" className="refresh-icon"/>
+                <img src={refreshIcon} className="refresh-icon" />
             </button>
+
+            <button className="download-button" onClick={handleDownloadImage}>
+                Download Outfit Image
+            </button>
+
             <p>Don't like it? Refresh!</p>
         </div>
     );
