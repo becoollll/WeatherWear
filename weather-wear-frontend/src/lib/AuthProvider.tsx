@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
+import type { Session, User } from "@supabase/supabase-js";
 
 type AuthContextType = {
-  user: any | null;
-  session: any | null;
+  user: User | null;
+  session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
 };
@@ -11,28 +12,64 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any | null>(null);
-  const [session, setSession] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      setSession(data?.session ?? null);
-      setUser(data?.session?.user ?? null);
-      setLoading(false);
-    })();
+    let mounted = true;
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s ?? null);
-      setUser(s?.user ?? null);
+    const initSession = async () => {
+      try {
+        // 1. Get local session
+        const { data: { session: localSession }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+
+        if (localSession) {
+            // 2. Key step: use getUser() to force check with Supabase Server if this Token is really valid
+            const { data: { user: validatedUser }, error: userError } = await supabase.auth.getUser();
+
+            if (userError || !validatedUser) {
+                // If Token is invalid, force sign out and clear
+                console.warn("Token invalid, forcing sign out");
+                await supabase.auth.signOut();
+                if (mounted) {
+                    setSession(null);
+                    setUser(null);
+                }
+            } else {
+                // Token is valid, set states
+                if (mounted) {
+                    setSession(localSession);
+                    setUser(validatedUser);
+                }
+            }
+        }
+      } catch (err) {
+        console.error("Auth initialization error:", err);
+        if (mounted) {
+            setSession(null);
+            setUser(null);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    initSession();
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (mounted) {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        setLoading(false);
+      }
     });
 
     return () => {
-      // unsubscribe if exists
-      if (sub && (sub as any).subscription) {
-        (sub as any).subscription.unsubscribe();
-      }
+      mounted = false;
+      sub.subscription.unsubscribe();
     };
   }, []);
 
