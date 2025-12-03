@@ -80,8 +80,11 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         const picks = {
             top: weatherFiltered.filter(i => topTypes.includes(i.clothing_type)),
             bottom: weatherFiltered.filter(i => bottomTypes.includes(i.clothing_type)),
-            accessory: weatherFiltered.filter(i => accessoryTypes.includes(i.clothing_type)),
+            other: weatherFiltered.filter(i => accessoryTypes.includes(i.clothing_type)),
         };
+        console.log("Weather filtered items:", weatherFiltered);
+        console.log("Accessory picks:", picks.other);
+        console.log("Selected accessory:", picks.other.length ? picks.other[0] : "none");
 
         const random = (arr: ClothingItem[]) =>
             arr.length ? arr[Math.floor(Math.random() * arr.length)] : null;
@@ -89,7 +92,7 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         setOutfit({
             top: random(picks.top),
             bottom: random(picks.bottom),
-            accessory: random(picks.accessory),
+            accessory: random(picks.other),
         });
     }
 
@@ -97,7 +100,6 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         void fetchOutfit();
     };
 
-    /** ⭐ Convert SVG → PNG base64 for html2canvas */
     const svgToPng = async (svgUrl: string): Promise<string> => {
         const svgText = await fetch(svgUrl).then(res => res.text());
         const svgBlob = new Blob([svgText], { type: "image/svg+xml" });
@@ -119,7 +121,6 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         });
     };
 
-    /** ⭐ ensure all images load */
     const waitForImages = (container: HTMLDivElement) => {
         const imgs = container.querySelectorAll("img");
         return Promise.all(
@@ -134,32 +135,78 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         );
     };
 
-    /** ⭐ Main Screenshot Function — supports SVG */
-    const handleDownloadImage = async () => {
-        if (!outfitCardRef.current) return;
+    const createOutfitCanvas = async (): Promise<HTMLCanvasElement | null> => {
+        if (!outfitCardRef.current) return null;
 
         await waitForImages(outfitCardRef.current);
 
-        const canvas = await html2canvas(outfitCardRef.current, {
+        return html2canvas(outfitCardRef.current, {
             scale: 2,
             backgroundColor: "#ffffff",
             useCORS: true,
             allowTaint: true,
-
-            /** ⭐ Convert SVG inside cloned DOM */
             onclone: async clonedDoc => {
                 const imgs = clonedDoc.querySelectorAll("img");
-
                 for (const img of Array.from(imgs)) {
                     const src = (img as HTMLImageElement).src;
-
                     if (src.endsWith(".svg")) {
                         const png = await svgToPng(src);
-                        (img as HTMLImageElement).src = png;
+                        if (png) {
+                            (img as HTMLImageElement).src = png;
+                        } else {
+                            (img as HTMLImageElement).style.display = 'none';
+                        }
                     }
                 }
             }
         });
+    };
+
+    const fallbackShare = () => {
+        const shareUrl = encodeURIComponent(window.location.href);
+        const text = encodeURIComponent("WeatherWear recommends this outfit for you!");
+        const twitterLink = `https://twitter.com/intent/tweet?url=${shareUrl}&text=${text}`;
+
+        // 開啟新視窗分享
+        window.open(twitterLink, '_blank', 'width=600,height=400');
+    };
+
+    const handleShareOutfit = async () => {
+        const canvas = await createOutfitCanvas();
+        if (!canvas) return;
+
+
+        if (navigator.share && navigator.canShare) {
+            try {
+
+                canvas.toBlob(async (blob) => {
+                    if (!blob) return;
+                    const file = new File([blob], "outfit.png", { type: "image/png" });
+
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: "Today's outfit recommendations.",
+                            text: "WeatherWear recommends this outfit for you!",
+                        });
+                        return;
+                    }
+                }, 'image/png');
+            } catch (error) {
+                console.error("Web Share API error:", error);
+
+                fallbackShare();
+                return;
+            }
+        }
+
+        fallbackShare();
+    };
+
+
+    const handleDownloadImage = async () => {
+        const canvas = await createOutfitCanvas();
+        if (!canvas) return;
 
         const data = canvas.toDataURL("image/png");
         const link = document.createElement("a");
@@ -167,6 +214,7 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         link.download = "outfit.png";
         link.click();
     };
+
 
     if (isLoading) {
         return <p style={{ textAlign: "center" }}>Loading outfit recommendation...</p>;
@@ -208,11 +256,14 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
             </div>
 
             <button className="refresh-button" onClick={handleRefresh}>
-                <img src={refreshIcon} className="refresh-icon" />
+                <img src={refreshIcon} className="refresh-icon"/>
             </button>
 
             <button className="download-button" onClick={handleDownloadImage}>
                 Download Outfit Image
+            </button>
+            <button className="download-button" onClick={handleShareOutfit}>
+                Share Outfit
             </button>
 
             <p>Don't like it? Refresh!</p>
