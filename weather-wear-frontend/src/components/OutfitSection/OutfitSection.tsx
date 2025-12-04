@@ -21,6 +21,7 @@ interface ClothingItem {
     low: number;
     weather_con: string;
     image_url?: string;
+    color?: string;
 }
 
 function normalizeWeatherCondition(cond: string): string {
@@ -32,6 +33,7 @@ function normalizeWeatherCondition(cond: string): string {
     return "all";
 }
 
+
 export default function OutfitSection({ weatherData, isLoading }: OutfitSectionProps) {
     const [outfit, setOutfit] = useState({
         top: null as ClothingItem | null,
@@ -39,13 +41,63 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         accessory: null as ClothingItem | null,
     });
 
+    const [svgMap, setSvgMap] = useState<Record<number, string>>({});
+
+    // Which wardrobe are we using?
+    const [usePersonal, setUsePersonal] = useState(false);
+
+    // Current user id for personal wardrobe filtering
+    const [userId, setUserId] = useState<string | null>(null);
+
     const outfitCardRef = useRef<HTMLDivElement>(null);
+
+    // Load current Supabase user once
+    useEffect(() => {
+        const loadUser = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                setUserId(session?.user?.id ?? null);
+            } catch (error) {
+                console.error("Error fetching Supabase session in OutfitSection:", error);
+                setUserId(null);
+            }
+        };
+        void loadUser();
+    }, []);
 
     useEffect(() => {
         if (weatherData && !isLoading) {
             void fetchOutfit();
         }
-    }, [weatherData, isLoading]);
+        // re-run when wardrobe source or user changes
+    }, [weatherData, isLoading, usePersonal, userId]);
+
+    useEffect(() => {
+        const items = [outfit.top, outfit.bottom, outfit.accessory].filter(
+            (i): i is ClothingItem => i !== null
+        );
+
+        items.forEach(async (item) => {
+
+            if (!item.image_url || !item.image_url.endsWith(".svg")) return;
+
+            if (svgMap[item.id]) return;
+
+            try {
+                const res = await fetch(item.image_url);
+                let svg = await res.text();
+
+                if (item.color) {
+                    svg = svg.replace(/fill="[^"]*"/g, `fill="${item.color}"`);
+                }
+
+                setSvgMap(prev => ({ ...prev, [item.id]: svg }));
+            } catch (error) {
+                console.error("Error loading/recoloring SVG for outfit item:", error);
+            }
+        });
+    }, [outfit, svgMap]);
+
 
     async function fetchOutfit() {
         if (!weatherData) return;
@@ -53,13 +105,44 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         const temp = Math.round(weatherData.current.main.feels_like);
         const condition = normalizeWeatherCondition(weatherData.current.weather[0].main);
 
-        const { data: allData } = await supabase.from("general-wardrobe").select("*");
+        // Decide which table to use
+        const tableName = usePersonal ? "personal-wardrobe" : "general-wardrobe";
 
-        const { data: filteredData } = await supabase
-            .from("general-wardrobe")
-            .select("*")
-            .lte("low", temp)
-            .gte("high", temp);
+        // If user wants personal but we have no userId, fallback to general
+        if (usePersonal && !userId) {
+            console.warn("usePersonal is true but userId is null; falling back to general wardrobe.");
+        }
+
+        // Base query builder
+        const buildQuery = () => {
+            let query = supabase.from(tableName).select("*");
+            if (usePersonal && userId) {
+                query = query.eq("user_id", userId);
+            }
+            return query;
+        };
+
+        const buildFilteredQuery = () => {
+            let query = supabase
+                .from(tableName)
+                .select("*")
+                .lte("low", temp)
+                .gte("high", temp);
+            if (usePersonal && userId) {
+                query = query.eq("user_id", userId);
+            }
+            return query;
+        };
+
+        const { data: allData, error: allError } = await buildQuery();
+        if (allError) {
+            console.error("Error fetching all wardrobe items:", allError);
+        }
+
+        const { data: filteredData, error: filteredError } = await buildFilteredQuery();
+        if (filteredError) {
+            console.error("Error fetching filtered wardrobe items:", filteredError);
+        }
 
         const dataToUse =
             (filteredData && filteredData.length > 0)
@@ -75,13 +158,15 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
 
         const topTypes = ["Sweatshirt", "T-shirt", "Polo", "Tanktop", "Buttonup", "Hoodie"];
         const bottomTypes = ["Jeans", "Sweatpants", "Shorts"];
-        const accessoryTypes = ["Rainjacket", "Jacket", "Wintercoat", "Overalls", "Jumpsuit"];
+        const accessoryTypes = ["Rainjacket", "Jacket", "Wintercoat", "Overalls", "Glasses", "Hat"];
 
         const picks = {
             top: weatherFiltered.filter(i => topTypes.includes(i.clothing_type)),
             bottom: weatherFiltered.filter(i => bottomTypes.includes(i.clothing_type)),
             other: weatherFiltered.filter(i => accessoryTypes.includes(i.clothing_type)),
         };
+
+        console.log("Using table:", tableName);
         console.log("Weather filtered items:", weatherFiltered);
         console.log("Accessory picks:", picks.other);
         console.log("Selected accessory:", picks.other.length ? picks.other[0] : "none");
@@ -127,9 +212,9 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
             Array.from(imgs).map(
                 img =>
                     new Promise<void>(resolve => {
-                        if (img.complete) resolve();
-                        img.onload = () => resolve();
-                        img.onerror = () => resolve();
+                        if ((img as HTMLImageElement).complete) resolve();
+                        (img as HTMLImageElement).onload = () => resolve();
+                        (img as HTMLImageElement).onerror = () => resolve();
                     })
             )
         );
@@ -154,7 +239,7 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
                         if (png) {
                             (img as HTMLImageElement).src = png;
                         } else {
-                            (img as HTMLImageElement).style.display = 'none';
+                            (img as HTMLImageElement).style.display = "none";
                         }
                     }
                 }
@@ -162,23 +247,21 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         });
     };
 
+
+
     const fallbackShare = () => {
         const shareUrl = encodeURIComponent(window.location.href);
         const text = encodeURIComponent("WeatherWear recommends this outfit for you!");
         const twitterLink = `https://twitter.com/intent/tweet?url=${shareUrl}&text=${text}`;
-
-        // 開啟新視窗分享
-        window.open(twitterLink, '_blank', 'width=600,height=400');
+        window.open(twitterLink, "_blank", "width=600,height=400");
     };
 
     const handleShareOutfit = async () => {
         const canvas = await createOutfitCanvas();
         if (!canvas) return;
 
-
         if (navigator.share && navigator.canShare) {
             try {
-
                 canvas.toBlob(async (blob) => {
                     if (!blob) return;
                     const file = new File([blob], "outfit.png", { type: "image/png" });
@@ -191,10 +274,9 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
                         });
                         return;
                     }
-                }, 'image/png');
+                }, "image/png");
             } catch (error) {
                 console.error("Web Share API error:", error);
-
                 fallbackShare();
                 return;
             }
@@ -202,7 +284,6 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
 
         fallbackShare();
     };
-
 
     const handleDownloadImage = async () => {
         const canvas = await createOutfitCanvas();
@@ -215,7 +296,6 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
         link.click();
     };
 
-
     if (isLoading) {
         return <p style={{ textAlign: "center" }}>Loading outfit recommendation...</p>;
     }
@@ -223,40 +303,83 @@ export default function OutfitSection({ weatherData, isLoading }: OutfitSectionP
     return (
         <div className="outfit-section">
             <h2 className="outfit-title">Today's Outfit Recommendation</h2>
+            {/*Wardrobe Toggle*/}
+            <div className="wardrobe-toggle">
+                <button
+                    type="button"
+                    className={`wardrobe-toggle-option ${!usePersonal ? "active" : ""}`}
+                    onClick={() => setUsePersonal(false)}
+                >
+                    General Wardrobe
+                </button>
+                <button
+                    type="button"
+                    className={`wardrobe-toggle-option ${usePersonal ? "active" : ""}`}
+                    onClick={() => setUsePersonal(true)}
+                    disabled={!userId}
+                    title={!userId ? "Log in to use your personal wardrobe" : ""}
+                >
+                    My Wardrobe
+                </button>
+            </div>
 
             <div ref={outfitCardRef} className="outfit-screenshot-card">
                 <div className="outfit-grid">
                     <div className="outfit-item">
                         <h3>Top</h3>
                         <p>{outfit.top?.clothing_type || "No match"}</p>
-                        <img
-                            src={outfit.top?.image_url || topPlaceholder}
-                            className="outfit-image"
-                        />
+
+                        {outfit.top?.image_url?.endsWith(".svg") && svgMap[outfit.top.id] ? (
+                            <div
+                                className="outfit-image svg-image"
+                                dangerouslySetInnerHTML={{ __html: svgMap[outfit.top.id] }}
+                            />
+                        ) : (
+                            <img
+                                src={outfit.top?.image_url || topPlaceholder}
+                                className="outfit-image"
+                            />
+                        )}
                     </div>
 
                     <div className="outfit-item">
                         <h3>Bottom</h3>
                         <p>{outfit.bottom?.clothing_type || "No match"}</p>
-                        <img
-                            src={outfit.bottom?.image_url || bottomPlaceholder}
-                            className="outfit-image"
-                        />
+
+                        {outfit.bottom?.image_url?.endsWith(".svg") && svgMap[outfit.bottom.id] ? (
+                            <div
+                                className="outfit-image svg-image"
+                                dangerouslySetInnerHTML={{ __html: svgMap[outfit.bottom.id] }}
+                            />
+                        ) : (
+                            <img
+                                src={outfit.bottom?.image_url || bottomPlaceholder}
+                                className="outfit-image"
+                            />
+                        )}
                     </div>
 
                     <div className="outfit-item">
                         <h3>Accessories</h3>
                         <p>{outfit.accessory?.clothing_type || "No match"}</p>
-                        <img
-                            src={outfit.accessory?.image_url || accessoryPlaceholder}
-                            className="outfit-image"
-                        />
+
+                        {outfit.accessory?.image_url?.endsWith(".svg") && svgMap[outfit.accessory.id] ? (
+                            <div
+                                className="outfit-image svg-image"
+                                dangerouslySetInnerHTML={{ __html: svgMap[outfit.accessory.id] }}
+                            />
+                        ) : (
+                            <img
+                                src={outfit.accessory?.image_url || accessoryPlaceholder}
+                                className="outfit-image"
+                            />
+                        )}
                     </div>
                 </div>
             </div>
 
             <button className="refresh-button" onClick={handleRefresh}>
-                <img src={refreshIcon} className="refresh-icon"/>
+                <img src={refreshIcon} className="refresh-icon" />
             </button>
 
             <button className="download-button" onClick={handleDownloadImage}>
