@@ -5,6 +5,7 @@ import EditPage from "./pages/EditPage";
 import UpdatePage from "./pages/UpdatePage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import ProfilePage from "./pages/ProfilePage";
 import './App.css';
 import { AuthProvider } from "./lib/AuthProvider";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -14,6 +15,9 @@ function App() {
         <AuthProvider>
             <Routes>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+
                 <Route path="/wardrobe" element={
                     <ProtectedRoute><WardrobePage /></ProtectedRoute>
                 } />
@@ -26,8 +30,9 @@ function App() {
                     <ProtectedRoute><UpdatePage /></ProtectedRoute>
                 } />
 
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/profile" element={
+                    <ProtectedRoute><ProfilePage /></ProtectedRoute>
+                } />
             </Routes>
         </AuthProvider>
     );
