@@ -143,16 +143,21 @@ export default function WardrobePage() {
 
                 <div className="main-sections">
                     <div className="wardrobe-page">
-                        {categories.map(cat => {
-                            const catItems = items.filter(i => i.type.toLowerCase() === cat.type); // ensure case matching
+                        {/*Favorited*/}
+                        {categories.map((cat, index) => {
+                            const catItems = items
+                                .filter(i => i.type.toLowerCase() === cat.type)
+                                .sort((a, b) => {
+                                    const favA = a.favorited ? 1 : 0;
+                                    const favB = b.favorited ? 1 : 0;
+                                    return favB - favA;
+                                });
 
-                            const minSlots = 4;
-                            const slots: (WardrobeItem | { id: number; empty: true })[] =
-                                catItems.length > 0 ? [...catItems] : [];
+                            const slots: (WardrobeItem | { id: number; empty: true })[] = [
+                                ...catItems,
+                                { id: -1000 - index, empty: true },
+                            ];
 
-                            while (slots.length < minSlots || slots.length % 4 !== 0) {
-                                slots.push({ id: -1000 - slots.length, empty: true });
-                            }
 
                             return (
                                 <section key={cat.type} className="wardrobe-section">
