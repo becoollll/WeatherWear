@@ -6,6 +6,7 @@ import WeatherSection from '../components/WeatherSection/WeatherSection.tsx';
 import Sidebar from '../components/NavBar/NavBar.tsx';
 import OutfitSection from '../components/OutfitSection/OutfitSection.tsx';
 import '../pages/HomePage.css';
+import ExtremeWeatherToast from '../components/ExtremeWeatherToast/ExtremeWeatherToast.tsx';
 
 interface Coordinates {
     latitude: number;
@@ -49,6 +50,7 @@ export default function HomePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [units, setUnits] = useState<'metric' | 'imperial'>('imperial');
     const [initialCoords, setInitialCoords] = useState<Coordinates | null>(null);
+    const [showWeatherAlert, setShowWeatherAlert] = useState(false);
 
     useEffect(() => {
         if (!navigator.geolocation) {
@@ -73,6 +75,12 @@ export default function HomePage() {
         );
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    useEffect(() => {
+        if (weatherData && !isLoading) {
+            setShowWeatherAlert(true);
+        }
+    }, [weatherData, isLoading]);
 
     const fetchData = async (coords: Coordinates, currentUnits: 'metric' | 'imperial') => {
         setIsLoading(true);
@@ -147,6 +155,12 @@ export default function HomePage() {
 
     return (
         <div className="homepage-container">
+            <ExtremeWeatherToast 
+                weatherData={weatherData}
+                units={units}
+                show={showWeatherAlert}
+                onClose={() => setShowWeatherAlert(false)}
+            />
             <Sidebar />
             <div className="main-content">
                 <TopBar>
