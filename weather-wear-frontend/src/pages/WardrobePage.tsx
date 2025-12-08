@@ -4,6 +4,7 @@ import TopBar from "../components/TopBar/TopBar.tsx";
 import "./WardrobePage.css";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import starIcon from "../assets/star.png";
 
 interface WardrobeItem {
     id: number;
@@ -193,6 +194,14 @@ export default function WardrobePage() {
                                                     <div className="wardrobe-name">{slot.clothing_type}</div>
 
                                                     <div className="wardrobe-actions">
+                                                        {slot.favorited && (
+                                                            <img
+                                                                src={starIcon}
+                                                                alt="favorite"
+                                                                className="favorite-icon"
+                                                            />
+                                                        )}
+
                                                         <button
                                                             className="btn edit"
                                                             onClick={() => handleEdit(slot.id)}
@@ -206,7 +215,6 @@ export default function WardrobePage() {
                                                         >
                                                             Remove
                                                         </button>
-
                                                     </div>
                                                 </div>
                                             )
